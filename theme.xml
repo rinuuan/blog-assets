@@ -38,15 +38,18 @@
       <meta expr:content='data:view.description.escaped' name='twitter:description'/>
     </b:if>
 
+    <!-- Preconnect only to the font origins on the critical path. jsdelivr
+         (lazy mascot art, OpenCC) and Blogger are non-critical, so they use
+         the cheaper dns-prefetch — this keeps the preconnect count low, which
+         PageSpeed flags once more than ~4 origins are preconnected. -->
     <link crossorigin='anonymous' href='https://fonts.gstatic.com' rel='preconnect'/>
     <link href='https://fonts.googleapis.com' rel='preconnect'/>
-    <link crossorigin='anonymous' href='https://cdn.jsdelivr.net' rel='preconnect'/>
     <link href='https://cdn.jsdelivr.net' rel='dns-prefetch'/>
-    <link crossorigin='anonymous' href='https://www.blogger.com' rel='preconnect'/>
+    <link href='https://www.blogger.com' rel='dns-prefetch'/>
 
-    <link as='style' href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@300;400;600&amp;display=swap' onload='this.onload=null;this.rel=&quot;stylesheet&quot;' rel='preload'/>
+    <link as='style' href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@300;400;600&amp;display=optional' onload='this.onload=null;this.rel=&quot;stylesheet&quot;' rel='preload'/>
     <noscript>
-      <link href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@300;400;600&amp;display=swap' rel='stylesheet'/>
+      <link href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@300;400;600&amp;display=optional' rel='stylesheet'/>
     </noscript>
 
     <script type='text/javascript'>
@@ -182,6 +185,31 @@
         }
       }
 
+      /* Metric-matched fallback faces: a local system font scaled (size-adjust
+         + ascent/descent overrides, derived from the font files via capsize)
+         to render at the web font's size, so the pre-load fallback looks right
+         and most font reflow is avoided. Tuned to Arial / Georgia; the extra
+         locals (Roboto, Noto, Liberation) keep the override working on
+         Android/Linux where Arial/Georgia are absent. Note: font-display is
+         set to optional in the font URL above, which is what fully guarantees
+         no layout shift (it skips the swap on slow first loads). */
+      @font-face {
+        font-family: 'Inter Fallback';
+        src: local('Arial'), local('Roboto'), local('Helvetica Neue'), local('Liberation Sans');
+        size-adjust: 107.12%;
+        ascent-override: 90.44%;
+        descent-override: 22.52%;
+        line-gap-override: 0%;
+      }
+      @font-face {
+        font-family: 'EB Garamond Fallback';
+        src: local('Georgia'), local('Times New Roman'), local('Noto Serif'), local('Liberation Serif');
+        size-adjust: 86.36%;
+        ascent-override: 116.60%;
+        descent-override: 34.51%;
+        line-gap-override: 0%;
+      }
+
       /* Global reset */
       * {
         box-sizing: border-box;
@@ -192,7 +220,7 @@
         padding: 0;
         background: var(--bg-color);
         color: var(--text-color);
-        font-family: 'Inter', "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-family: 'Inter', 'Inter Fallback', "PingFang SC", "Microsoft YaHei", sans-serif;
         line-height: 1.8;
         font-size: 16px;
         -webkit-font-smoothing: antialiased;
@@ -498,7 +526,7 @@
       [data-theme="dark"] .moon-icon { display: none; }
 
       .text-toggle-btn {
-        font-family: 'EB Garamond', serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         font-size: 1rem;
         font-weight: 500;
       }
@@ -531,7 +559,7 @@
       }
 
       .header-title h1 {
-        font-family: 'EB Garamond', serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         font-weight: 500;
         /* Fluid headline — scales continuously with viewport (Apple style)
            instead of snapping at a breakpoint. Tuned to equal the old flat
@@ -680,7 +708,7 @@
         min-height: 32px;
         color: var(--meta-color);
         font-size: 0.9rem;
-        font-family: 'EB Garamond', Georgia, serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
         font-style: italic;
         opacity: 0;
         transition: opacity 0.4s var(--ease);
@@ -731,7 +759,7 @@
       }
 
       h2.post-title {
-        font-family: 'EB Garamond', serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         /* Fluid like the header: ≈1.85rem at laptop widths, up to 2.05rem
            on wide screens; the <=600px rule keeps phones at 1.4rem. */
         font-size: clamp(1.8rem, 1.62rem + 0.48vw, 2.05rem);
@@ -797,6 +825,12 @@
       .post-body.full-content {
         font-size: 1.15rem;
         word-break: break-word;
+        /* Default to the CJK typography (the blog's dominant language) so the
+           post-load typography pass is a no-op for Chinese posts and doesn't
+           reflow the text after first paint (the main CLS source). English
+           posts are retuned by that pass; CSS here just sets the start state. */
+        line-height: 2.2;
+        text-align: justify;
         /* Editorial polish: enable ligatures + contextual alternates so
            Inter sets cleanly, and let the browser optimise legibility. */
         font-feature-settings: "liga" 1, "calt" 1;
@@ -907,7 +941,7 @@
       .post-body.full-content h2,
       .post-body.full-content h3,
       .post-body.full-content h4 {
-        font-family: 'EB Garamond', serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         font-weight: 500;
         line-height: 1.35;
         color: var(--text-color);
@@ -933,7 +967,7 @@
         padding: 0.2em 0 0.2em 1.4em;
         border-left: 3px solid var(--accent-color);
         color: var(--meta-color);
-        font-family: 'EB Garamond', Georgia, serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
         font-size: 1.2rem;
         line-height: 1.7;
         /* Old-style figures + balanced wrap so any year/number in a pull
@@ -1008,7 +1042,7 @@
       .post-body.full-content figure { margin: 30px 0; }
       .post-body.full-content figure img { margin: 0 auto 8px; }
       .post-body.full-content figcaption {
-        font-family: 'EB Garamond', Georgia, serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
         font-style: italic;
         font-size: 0.9rem;
         color: var(--meta-color);
@@ -1031,6 +1065,10 @@
         font-size: 1.15rem;
         color: var(--text-color);
         margin-bottom: 18px;
+        /* Same CLS guard as full-content: start at the dominant CJK metrics
+           so the post-load pass doesn't reflow list snippets. */
+        line-height: 2.2;
+        text-align: justify;
         font-feature-settings: "liga" 1, "calt" 1;
         text-rendering: optimizeLegibility;
       }
@@ -1080,7 +1118,7 @@
 
       .related-posts h3,
       .comments-wrapper h3 {
-        font-family: 'EB Garamond', serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         font-size: 1.5rem;
         margin-bottom: 15px;
         font-weight: 500;
@@ -1606,7 +1644,7 @@
           position: fixed;
           top: 50%;
           transform: translateY(-50%);
-          font-family: 'EB Garamond', 'Cormorant Garamond', Georgia, serif;
+          font-family: 'EB Garamond', 'EB Garamond Fallback', 'Cormorant Garamond', Georgia, serif;
           font-style: italic;
           /* Old-style figures so the year in the date rail reads as
              manuscript marginalia rather than tabular digits. */
@@ -1716,7 +1754,7 @@
         -webkit-backdrop-filter: var(--glass-blur);
         backdrop-filter: var(--glass-blur);
         color: var(--meta-color);
-        font-family: 'EB Garamond', Georgia, serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
         font-style: italic;
         font-size: 0.95rem;
         letter-spacing: 0.2px;
@@ -2316,7 +2354,7 @@
         transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
       }
       .error-code {
-        font-family: 'EB Garamond', serif;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         font-size: clamp(3.5rem, 18vw, 5rem);
         font-weight: 500;
         line-height: 1;
