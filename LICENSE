@@ -1,33 +1,27 @@
-Non-Commercial License
+# Licensing
 
 Copyright (c) 2026 rinuuan. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this repository and its contents (the "Material"), including its source
-code, documentation, images, and artwork, to use, copy, modify, create
-derivative works from, and distribute the Material solely for non-commercial
-purposes, subject to the following conditions:
+This repository is available under the following non-commercial licenses:
 
-1. The above copyright notice and this license must be included with all
-   copies or substantial portions of the Material.
+## Theme code and documentation
 
-2. The Material and derivative works may not be used for any commercial
-   purpose without prior written permission from the copyright holder.
-   Commercial purposes include use primarily intended for or directed toward
-   commercial advantage or monetary compensation, including paid products or
-   services, client work, advertising-supported deployments, and internal use
-   by for-profit organizations.
+Unless stated otherwise, `theme.xml`, Markdown documentation, and other
+source files are licensed under the PolyForm Noncommercial License 1.0.0.
+See [`LICENSES/PolyForm-Noncommercial-1.0.0.txt`](LICENSES/PolyForm-Noncommercial-1.0.0.txt).
 
-3. This license does not grant permission to use the copyright holder's name,
-   trademarks, service marks, or branding to endorse or promote products or
-   services derived from the Material.
+Required Notice: Copyright 2026 rinuuan (https://rinuan.org)
 
-4. No ownership rights are transferred under this license. All rights not
-   expressly granted are reserved by the copyright holder.
+## Mascot artwork
 
-THE MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
-CONNECTION WITH THE MATERIAL OR THE USE OF OR OTHER DEALINGS IN THE MATERIAL.
+All image files under `mascot/`, including original artwork, expressions,
+chibi variants, and high-resolution exports, are licensed under the Creative
+Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+See [`LICENSES/CC-BY-NC-4.0.txt`](LICENSES/CC-BY-NC-4.0.txt).
+
+Attribution: "Rinuan Blog Mascot" by rinuuan, https://rinuan.org
+
+## Commercial use
+
+These licenses do not grant permission for commercial use. For commercial
+licensing, obtain prior written permission from the copyright holder.
