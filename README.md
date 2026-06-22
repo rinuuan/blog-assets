@@ -110,4 +110,6 @@ https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi
 
 ## 许可
 
-当前仓库未附带开源许可证。除非另有说明，主题代码与角色素材的使用、修改和再分发权利均由其作者保留。
+Copyright © 2026 rinuuan。主题代码、文档与角色素材采用本仓库的[非商业许可证](LICENSE)：允许用于非商业目的的使用、复制、修改及再分发，但必须保留版权和许可证声明。任何商业用途均须事先获得版权所有者的书面授权。
+
+由于包含非商业用途限制，该许可证属于源码可用许可证，不是 [OSI](https://opensource.org/osd) 定义下的开源许可证。
