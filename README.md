@@ -20,7 +20,9 @@
 
 ```text
 .
-├── theme.xml                         # Blogger 主题文件
+├── theme.xml                         # 可读、可编辑的主题源文件
+├── theme.min.xml                     # 供 Blogger 上传的精简版主题
+├── minify.py                         # 精简版生成与 XML 校验脚本
 ├── README.md                         # 项目说明
 └── mascot/
     ├── README.md                     # 看板娘素材说明
@@ -36,11 +38,22 @@
 
 1. 登录 [Blogger](https://www.blogger.com/) 并进入目标博客。
 2. 打开 **主题** 页面，先通过 **备份** 下载当前主题。
-3. 点击 **恢复**，上传本仓库根目录中的 `theme.xml`。
+3. 点击 **恢复**，上传本仓库根目录中的 `theme.min.xml`。
 4. 打开博客，检查首页、文章页、标签页、评论区和 404 页面。
 5. 在 Blogger 的 **布局** 页面配置博客标题、描述、标签菜单和社交链接。
 
 > 上传主题会替换博客当前的主题代码。已有文章不会被删除，但建议始终先备份当前主题。
+
+## 修改与构建
+
+`theme.xml` 是唯一需要手动编辑的源文件。完成修改后，安装压缩依赖并重新生成 `theme.min.xml`：
+
+```bash
+python3 -m pip install rjsmin rcssmin
+python3 minify.py
+```
+
+脚本会精简主题中的 CSS、JavaScript、注释和多余空白，不会重命名变量，并在写入后自动验证 XML。请勿直接编辑 `theme.min.xml`；每次修改主题后都应重新运行脚本。
 
 ## 配置
 
@@ -89,7 +102,7 @@ https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi
 
 ## 外部依赖
 
-主题不需要构建工具，但运行时会使用以下外部服务：
+主题在浏览器中运行时不需要构建工具；仅生成 `theme.min.xml` 时需要 Python 3、`rjsmin` 和 `rcssmin`。运行时会使用以下外部服务：
 
 - Blogger 模板与评论系统
 - Google Fonts
@@ -101,6 +114,7 @@ https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi
 ## 发布前检查
 
 - 确认 XML 能由 Blogger 正常上传并保存
+- 确认 `theme.min.xml` 已由最新的 `theme.xml` 重新生成
 - 替换默认分享封面和页脚社交链接
 - 分别检查中文、英文、简体和繁体显示
 - 检查浅色、深色及移动端布局
