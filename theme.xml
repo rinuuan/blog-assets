@@ -125,14 +125,11 @@
         /* Sage hover wash, laid over the glass as an inset shadow layer so it
            fades smoothly (gradient→gradient can't be transitioned). */
         --glass-tint: color-mix(in srgb, var(--accent-color) 18%, transparent);
-        /* Motion system — Apple/Anthropic-flavoured easing. --ease is a
-           gentle in-out for reversible states (colour changes); --ease-out
-           is a settled decelerating curve for things that appear or travel
-           (fades, reveals, the hint pill). --ease-spring adds a small
-           overshoot (Apple's "back" feel) and is used ONLY on the transform
-           of hover lifts/presses, so a button springs into place while its
-           colour still eases linearly — never applied to opacity, width or
-           collapse transitions, which would visibly bounce. */
+        /* Motion system (Apple/Anthropic-flavoured easing). --ease: gentle
+           in-out for reversible colour changes. --ease-out: decelerating
+           curve for things that appear or travel. --ease-spring: slight
+           overshoot, used ONLY on hover-lift/press transforms — never on
+           opacity/width/collapse, which would visibly bounce. */
         --ease: cubic-bezier(0.4, 0, 0.2, 1);
         --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
         --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -670,12 +667,22 @@
         flex-shrink: 0;
       }
 
-      /* Posts */
+      /* Posts. content-visibility skips rendering off-screen cards on list
+         pages — a real win when many posts are stacked. */
       .post-outer {
         margin-bottom: 70px;
         content-visibility: auto;
         contain-intrinsic-size: 100px 500px;
         position: relative;
+      }
+      /* But NOT on a single article: the whole post is one giant .post-outer,
+         and virtualising it makes the document scroll height track only the
+         rendered slice (~500px) instead of the article's real height. That
+         breaks every scroll-percentage feature — the reading-progress bar and
+         the mascot's halfway/finished lines never reach their thresholds. */
+      .post-outer:has(.post-body.full-content) {
+        content-visibility: visible;
+        contain-intrinsic-size: auto;
       }
 
       /* Subtle divider between posts on list pages */
@@ -1623,15 +1630,11 @@
         .reply-toggle-btn::before { left: -14px !important; width: 14px !important; height: 26px !important; top: -10px !important; border-bottom-left-radius: 12px !important; }
       }
 
-      /* ========================================================
-         Desktop layout — Plan C: restrained marginalia
-         Reading column stays 700px (identical typography to mobile).
-         Adds three subtle desktop-only flourishes at >=1024px:
-           1. Date label in the left margin (vertical for CJK)
-           2. Reading-time label in the right margin (mirror of #1)
-           3. Hover marker line beside the paragraph under the cursor
-         All purely additive — nothing in the reading flow changes.
-         ======================================================== */
+      /* Desktop layout (>=1024px) — restrained marginalia. The 700px reading
+         column and its typography are unchanged; this only adds three additive
+         margin flourishes: a date label in the left margin (vertical for CJK),
+         a mirrored reading-time label on the right, and a hover marker beside
+         the paragraph under the cursor. Reading flow is untouched. */
       @media (min-width: 1024px) {
 
         /* ── Margin notes: date (left) + read time (right) ────── */
@@ -2164,17 +2167,13 @@
          themed (readable) colour — coral is a mid-tone that fails AA as text. */
       .mascot-menu .menu-hide:hover { color: var(--text-color); background: color-mix(in srgb, var(--persimmon) 16%, transparent); }
 
-      /* ── Dark-mode visibility on the (frosted) settings panel ──────────
-         The glass is kept; only three elements that sat too close to the
-         panel tone in dark mode are lifted:
-         · "收起看板娘" used --meta-color (~4.1:1, under AA) → brighter warm grey;
-         · the divider <hr> and the size-slider track used --border-color,
-           which is almost the panel's own colour → redraw them with a faint
-           light tint so they read against the glass.
-         Light mode is untouched (it had enough contrast already). The slider
-         track and its Firefox equivalent are split into separate rules: a
-         vendor pseudo-element in a shared selector list voids the whole rule
-         in non-Firefox browsers. */
+      /* Dark-mode contrast on the frosted settings panel. Three elements sat
+         too close to the panel tone: the hide-mascot label (was --meta-color,
+         ~4.1:1, under AA) → brighter warm grey; the divider <hr> and slider
+         track (were --border-color) → a faint light tint so they read on the
+         glass. Light mode is fine as-is. The slider track and its Firefox
+         equivalent are separate rules — a vendor pseudo-element in a shared
+         selector list voids the whole rule elsewhere. */
       [data-theme="dark"] .mascot-menu .menu-hide {
         color: #a8a59b;
       }
@@ -3950,11 +3949,19 @@
                     if (!halfShown && pct > 0.45 && pct < 0.9) { halfShown = true; if (ambient()) say(pick(HALF)); }
                     if (!endShown && pct > 0.97) { endShown = true; say(pick(END)); }
                     if (pct > 0.5) wentDeep = true;
-                    // Scrolled back near the top after having gone deep.
-                    if (wentDeep && !backCooling && st < window.innerHeight * 0.25) {
-                        wentDeep = false; backCooling = true;
-                        if (ambient()) say(pick(BACKTOP));
-                        setTimeout(function() { backCooling = false; }, 30000);
+                    // Scrolled back near the top after having gone deep. Reset the
+                    // halfway/finished milestones so a second read re-triggers them,
+                    // and greet the scroll-back. The reset always runs; only the
+                    // greeting is rate-limited (30s) so it can't spam.
+                    if (wentDeep && st < window.innerHeight * 0.25) {
+                        wentDeep = false;
+                        halfShown = false;
+                        endShown = false;
+                        if (!backCooling) {
+                            backCooling = true;
+                            if (ambient()) say(pick(BACKTOP));
+                            setTimeout(function() { backCooling = false; }, 30000);
+                        }
                     }
                 };
                 window.addEventListener('scroll', function() {
