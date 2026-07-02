@@ -22,6 +22,13 @@ Paths:
   - `https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi`
   - `https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/emotions`
 
+### Edge-peek poses
+
+- `mascot/chibi/peek-left.png`: playful left-edge idle pose.
+- `mascot/chibi/peek-right.png`: playful right-edge idle pose.
+- Both are calibrated for the theme's current 54% tucked translation.
+- Matching high-resolution masters are stored in `mascot/chibi-hd/`.
+
 ## High-resolution sets
 
 Paths:
@@ -33,4 +40,5 @@ Paths:
 - Intended for archival use, future edits, and high-resolution output.
 - Do not use these files for the 140 px-wide Blogger mascot unless full resolution is required.
 
-All four directories contain: `happy`, `angry`, `sad`, `surprised`, `shy`, `confused`, `excited`, and `sleepy`.
+The four expression directories contain: `happy`, `angry`, `sad`, `surprised`, `shy`, `confused`, `excited`, and `sleepy`.
+The chibi directories additionally contain `peek-left` and `peek-right`.

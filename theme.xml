@@ -3,6 +3,10 @@
 <html b:css='false' b:defaultwidgetversion='2' b:layoutsVersion='3' b:responsive='true' expr:dir='data:blog.languageDirection' expr:lang='data:blog.locale' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
   <head>
     <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <!-- Tint the mobile browser chrome to the paper/charcoal bg. Keyed to
+         the OS scheme (the in-page toggle can't drive a meta tag). -->
+    <meta content='#faf9f4' media='(prefers-color-scheme: light)' name='theme-color'/>
+    <meta content='#1a1915' media='(prefers-color-scheme: dark)' name='theme-color'/>
     <title><data:view.title.escaped/></title>
     <b:include data='blog' name='all-head-content'/>
 
@@ -10,8 +14,9 @@
     <meta expr:content='data:view.url.canonical' property='og:url'/>
     <meta expr:content='data:blog.title' property='og:site_name'/>
 
-    <!-- Default share cover (OG/Twitter, 1200x630).
-         Used for non-article views and articles with no featured image. -->
+    <!-- Default share cover (1200x630) for non-article views and articles
+         without a featured image. Direct jsDelivr URL — the GitHub
+         ?raw=true form is a 302 some social crawlers won't follow. -->
     <b:if cond='data:view.isSingleItem'>
       <meta content='article' property='og:type'/>
       <b:if cond='data:view.featuredImage'>
@@ -20,14 +25,14 @@
         <meta content='630' property='og:image:height'/>
         <meta content='summary_large_image' name='twitter:card'/>
       <b:else/>
-        <meta content='https://github.com/rinuuan/blog-assets/blob/main/cover-light.png?raw=true' property='og:image'/>
+        <meta content='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/cover-light.png' property='og:image'/>
         <meta content='1200' property='og:image:width'/>
         <meta content='630' property='og:image:height'/>
         <meta content='summary_large_image' name='twitter:card'/>
       </b:if>
     <b:else/>
       <meta content='website' property='og:type'/>
-      <meta content='https://github.com/rinuuan/blog-assets/blob/main/cover-light.png?raw=true' property='og:image'/>
+      <meta content='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/cover-light.png' property='og:image'/>
       <meta content='1200' property='og:image:width'/>
       <meta content='630' property='og:image:height'/>
       <meta content='summary_large_image' name='twitter:card'/>
@@ -38,18 +43,20 @@
       <meta expr:content='data:view.description.escaped' name='twitter:description'/>
     </b:if>
 
-    <!-- Preconnect only to the font origins on the critical path. jsdelivr
-         (lazy mascot art, OpenCC) and Blogger are non-critical, so they use
-         the cheaper dns-prefetch — this keeps the preconnect count low, which
-         PageSpeed flags once more than ~4 origins are preconnected. -->
+    <!-- Preconnect only the critical font origins; jsDelivr and Blogger
+         are non-critical, so the cheaper dns-prefetch (PageSpeed flags
+         more than ~4 preconnects). -->
     <link crossorigin='anonymous' href='https://fonts.gstatic.com' rel='preconnect'/>
     <link href='https://fonts.googleapis.com' rel='preconnect'/>
     <link href='https://cdn.jsdelivr.net' rel='dns-prefetch'/>
     <link href='https://www.blogger.com' rel='dns-prefetch'/>
 
-    <link as='style' href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@300;400;600&amp;display=optional' onload='this.onload=null;this.rel=&quot;stylesheet&quot;' rel='preload'/>
+    <!-- Only the weights actually used: Dancing Script 500 (tagline),
+         EB Garamond 400/500 + italic 400, Inter 400/600. Inter 300 and
+         Dancing Script 600 were never referenced by any rule. -->
+    <link as='style' href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@400;600&amp;display=optional' onload='this.onload=null;this.rel=&quot;stylesheet&quot;' rel='preload'/>
     <noscript>
-      <link href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@300;400;600&amp;display=optional' rel='stylesheet'/>
+      <link href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@400;600&amp;display=optional' rel='stylesheet'/>
     </noscript>
 
     <script type='text/javascript'>
@@ -77,59 +84,44 @@
     </script>
 
     <b:skin><![CDATA[
-      /* Light theme — Anthropic-style warm editorial palette: ivory
-         paper, near-black ink, a warm hairline. The brand accent stays
-         green, but retuned to an earthier olive-sage so it sits in this
-         warm system the way Anthropic's coral does. --persimmon is set to
-         Anthropic's exact coral (#d97757) as the secondary warm tone. */
+      /* Light theme — warm editorial palette: ivory paper, near-black ink.
+         Brand accent stays green (olive-sage); --persimmon is Anthropic's
+         coral as the secondary warm tone. */
       :root {
-        /* Theme the native UI too — scrollbars, form controls, the canvas —
-           so they match light/dark instead of the dark-mode scrollbar
-           staying light. (The comment iframe keeps its own forced light
-           scheme for the re-tint filter, set locally.) */
+        /* Match native UI (scrollbars, form controls) to the theme; the
+           comment iframe forces its own light scheme for its re-tint filter. */
         color-scheme: light;
         --bg-color: #faf9f4;
         --text-color: #20201d;
         --meta-color: #6b6960;
-        /* Accent darkened slightly so green text clears WCAG AA contrast on
-           the warm paper (e.g. the active nav link flagged by PageSpeed). */
+        /* Darkened so accent text clears WCAG AA on the warm paper. */
         --accent-color: #55703e;
-        /* Derived from the accent so it tracks any future hue change
-           instead of drifting out of sync as a hand-coded rgba would. */
+        /* Derived from the accent so it tracks any future hue change. */
         --accent-bg: color-mix(in srgb, var(--accent-color) 10%, transparent);
         --persimmon: #d97757;
         --btn-bg: rgba(40, 36, 28, 0.04);
         --border-color: #e8e3d7;
         --icon-color: #6f6d64;
         --container-width: 700px;
-        /* ── Frosted-glass material ───────────────────────────────────────
-           Shared surface for the floating chrome, tinted toward the warm
-           paper bg rather than cold white so it sits naturally on the page.
-           Two tiers: --glass-bg is airy (icon buttons, hint), --glass-panel
-           is more opaque for surfaces that carry text (speech bubble, menu)
-           so the words stay crisp. --glass-edge fakes a soft convex rim in
-           place of a border; --glass-drop is the faint shadow beneath. */
+        /* ── Frosted-glass material for the floating chrome, tinted toward
+           the warm paper. --glass-bg: airy (icon buttons, hint);
+           --glass-panel: more opaque for text-bearing surfaces;
+           --glass-edge fakes a soft rim in place of a border. */
         --glass-bg: linear-gradient(180deg, rgba(252, 250, 244, 0.46), rgba(249, 247, 239, 0.30));
         --glass-panel: linear-gradient(180deg, rgba(253, 251, 246, 0.62), rgba(250, 248, 241, 0.52));
-        /* Stronger frost: a wide blur + extra saturation so the glass reads
-           clearly as glass — the backdrop visibly diffuses through the very
-           translucent panels above. Every frosted surface (hint, bubble +
-           tail, gear, settings menu, re-open handle) draws from these
-           variables, so they all share this material. Text on the panels
-           stays legible because its content is high-contrast. */
+        /* Wide blur + saturation so the glass clearly reads as glass;
+           every frosted surface shares these variables. */
         --glass-blur: blur(22px) saturate(185%);
         --glass-fill: rgba(252, 250, 245, 0.62);
         --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.34);
         --glass-drop: 0 5px 16px rgba(40, 36, 28, 0.10);
         --glass-drop-pop: 0 14px 32px rgba(40, 36, 28, 0.16);
-        /* Sage hover wash, laid over the glass as an inset shadow layer so it
-           fades smoothly (gradient→gradient can't be transitioned). */
+        /* Sage hover wash as an inset shadow layer — gradients can't be
+           transitioned, inset shadows can. */
         --glass-tint: color-mix(in srgb, var(--accent-color) 18%, transparent);
-        /* Motion system (Apple/Anthropic-flavoured easing). --ease: gentle
-           in-out for reversible colour changes. --ease-out: decelerating
-           curve for things that appear or travel. --ease-spring: slight
-           overshoot, used ONLY on hover-lift/press transforms — never on
-           opacity/width/collapse, which would visibly bounce. */
+        /* Motion system. --ease: reversible colour changes. --ease-out:
+           entrances/travel. --ease-spring: hover/press transforms ONLY —
+           it visibly bounces on opacity/width/collapse. */
         --ease: cubic-bezier(0.4, 0, 0.2, 1);
         --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
         --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -147,13 +139,9 @@
         --btn-bg: rgba(255, 255, 255, 0.05);
         --border-color: #2d2b25;
         --icon-color: #918e83;
-        /* Dark glass — modern frosted-pane look: a flat, more translucent
-           fill so the backdrop blur shows through (rather than a heavy slab),
-           and a large, soft, diffuse shadow. Tone is a near-neutral warm
-           graphite — light enough above the page that its edges read by
-           luminance contrast, so it needs NO drawn rim (a full white inset
-           ring shows up as a hard white frame on dark); just a faint top
-           sheen where light would catch. */
+        /* Dark glass: translucent warm graphite so the blur shows through,
+           soft diffuse shadow, NO drawn rim (a white inset ring reads as a
+           hard frame on dark) — just a faint top sheen. */
         --glass-bg: linear-gradient(180deg, rgba(58, 57, 53, 0.34), rgba(48, 47, 43, 0.28));
         --glass-panel: linear-gradient(180deg, rgba(52, 51, 47, 0.58), rgba(44, 43, 40, 0.50));
         --glass-fill: rgba(52, 51, 47, 0.56);
@@ -163,12 +151,8 @@
         --glass-tint: color-mix(in srgb, var(--accent-color) 24%, transparent);
       }
 
-      /* Fallback when backdrop-filter is unavailable (older engines, some
-         embedded webviews): with no blur to lift text off whatever sits
-         behind, the very translucent glass would be hard to read. So make
-         the surfaces near-opaque instead — same warm tone, just solid. All
-         frosted elements read from these variables, so this covers every one
-         at once. */
+      /* No backdrop-filter (older engines): translucent glass would be
+         unreadable, so go near-opaque in the same warm tone. */
       @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
         :root {
           --glass-bg: linear-gradient(180deg, rgba(250, 248, 242, 0.97), rgba(248, 246, 238, 0.96));
@@ -182,14 +166,26 @@
         }
       }
 
-      /* Metric-matched fallback faces: a local system font scaled (size-adjust
-         + ascent/descent overrides, derived from the font files via capsize)
-         to render at the web font's size, so the pre-load fallback looks right
-         and most font reflow is avoided. Tuned to Arial / Georgia; the extra
-         locals (Roboto, Noto, Liberation) keep the override working on
-         Android/Linux where Arial/Georgia are absent. Note: font-display is
-         set to optional in the font URL above, which is what fully guarantees
-         no layout shift (it skips the swap on slow first loads). */
+      /* Honour the OS "reduce transparency" setting: same near-opaque
+         surfaces as above, and skip the backdrop blur entirely. */
+      @media (prefers-reduced-transparency: reduce) {
+        :root {
+          --glass-blur: none;
+          --glass-bg: linear-gradient(180deg, rgba(250, 248, 242, 0.97), rgba(248, 246, 238, 0.96));
+          --glass-panel: linear-gradient(180deg, rgba(251, 249, 244, 0.98), rgba(249, 247, 240, 0.97));
+          --glass-fill: rgba(250, 248, 243, 0.98);
+        }
+        [data-theme="dark"] {
+          --glass-bg: linear-gradient(180deg, rgba(46, 45, 41, 0.97), rgba(40, 39, 36, 0.96));
+          --glass-panel: linear-gradient(180deg, rgba(46, 45, 41, 0.98), rgba(40, 39, 36, 0.97));
+          --glass-fill: rgba(44, 43, 40, 0.98);
+        }
+      }
+
+      /* Metric-matched fallback faces (capsize-derived size-adjust +
+         ascent/descent overrides) so the pre-swap paint matches the web
+         font. Extra locals cover Android/Linux. font-display: optional in
+         the font URL is what fully prevents CLS. */
       @font-face {
         font-family: 'Inter Fallback';
         src: local('Arial'), local('Roboto'), local('Helvetica Neue'), local('Liberation Sans');
@@ -212,6 +208,12 @@
         box-sizing: border-box;
       }
 
+      html {
+        /* Anchor jumps (skip link, in-article anchors) glide instead of
+           snapping. The global reduced-motion guard resets this to auto. */
+        scroll-behavior: smooth;
+      }
+
       body {
         margin: 0;
         padding: 0;
@@ -222,21 +224,15 @@
         font-size: 16px;
         -webkit-font-smoothing: antialiased;
         -webkit-tap-highlight-color: transparent;
-        /* Stop iOS Safari from auto-inflating body text on orientation
-           change (it keeps the carefully tuned sizes intact). Doesn't
-           affect the user's own pinch-zoom. */
+        /* Stop iOS Safari auto-inflating text on rotation (pinch-zoom
+           is unaffected). */
         -webkit-text-size-adjust: 100%;
         text-size-adjust: 100%;
-        /* Don't fake italics: CJK system fonts have no italic face, so
-           font-style:italic on Chinese text would render an ugly synthetic
-           slant. Disabling style synthesis makes CJK render upright while
-           real italic faces (EB Garamond) still slant; weight synthesis is
-           kept so bold/semibold still work. */
+        /* No synthetic italics: CJK has no italic face and fake slant is
+           ugly. Weight synthesis stays so bold still works. */
         font-synthesis: weight small-caps;
-        /* Theme toggle: body fades its own background/color smoothly.
-           Buttons, tags, links etc. carry their own colour transitions
-           (0.3s var(--ease)) and pick up the variable change automatically,
-           so the whole page inverts in step. */
+        /* Theme toggle: elements with their own 0.3s colour transitions
+           pick up the variable change, so the page inverts in step. */
         transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
       }
 
@@ -250,10 +246,7 @@
         color: var(--accent-color);
       }
 
-      /* ── Interaction polish ────────────────────────────────────────
-         Refined details that make the whole thing feel considered:
-         a branded text-selection tint, a clean keyboard focus ring, and
-         no grey mobile tap-flash (our own :active states handle feedback). */
+      /* ── Interaction polish: branded selection tint + keyboard focus ring. */
       ::selection { background: color-mix(in srgb, var(--accent-color) 24%, transparent); }
 
       a:focus-visible,
@@ -271,12 +264,8 @@
         outline: none;
       }
 
-      /* Skip link — the first Tab stop, letting keyboard and screen-reader
-         users jump past the header + nav straight to the article. Sits
-         off-screen until focused, then slides in as a solid accent pill.
-         Focus lands on <main tabindex="-1"> so the next Tab continues from
-         the content. The colour pair inverts cleanly in both themes (ink-bg
-         text on the accent), so it never collides with a:hover. */
+      /* Skip link — first Tab stop, jumps past header + nav to
+         <main tabindex="-1">. Off-screen until focused. */
       .skip-link {
         position: fixed;
         left: 12px;
@@ -297,10 +286,8 @@
       .skip-link:focus { top: 12px; outline: none; }
       #main-content:focus { outline: none; }
 
-      /* Theme-toggle: fade the themed hairlines + post dividers with the
-         background instead of letting them snap to the new colour. Border/
-         background are sourced from variables, so these fade cleanly at the
-         same 0.3s with no inheritance-chasing. */
+      /* Fade the themed hairlines + post dividers on theme toggle instead
+         of letting them snap. */
       .related-posts,
       .comments-wrapper,
       .related-posts li,
@@ -339,9 +326,8 @@
         font-size: 0.9rem;
       }
 
-      /* Current section — a quiet sage marker so you always know where
-         you are. The .is-active class is set by a synchronous script that
-         matches the URL path against each nav link (flash-free). */
+      /* Current-section marker; .is-active is set by a synchronous
+         URL-matching script (flash-free). */
       .main-nav li a.is-active {
         background: var(--accent-bg);
         color: var(--accent-color);
@@ -351,11 +337,13 @@
       .comment-toggle-btn {
         padding: 10px 24px;
         min-height: 48px;
+        width: 100%;
+        max-width: 350px;
+        display: flex;
+        margin: 0 auto 20px auto;
       }
 
-      /* "Read More" + newer/older pager are styled exactly like the nav-bar
-         tab buttons: the shared quiet base (neutral fill, sage tint on
-         hover) plus the nav's compact font size. */
+      /* Read More + pager reuse the quiet nav-tab look at its compact size. */
       .read-more,
       .blog-pager a {
         font-size: 0.9rem;
@@ -363,13 +351,6 @@
 
       .read-more {
         margin-top: 15px;
-      }
-
-      .comment-toggle-btn {
-        width: 100%;
-        max-width: 350px;
-        display: flex;
-        margin: 0 auto 20px auto;
       }
 
       .post-tag:hover,
@@ -382,19 +363,19 @@
         transform: translateY(-2px);
       }
 
+      /* Press responds instantly (Apple-style ~0.1s); releasing falls
+         back to the base 0.3s spring, so the rebound still has life. */
       .post-tag:active,
       .read-more:active,
       .blog-pager a:active,
       .comment-toggle-btn:active,
       .main-nav li a:active {
         transform: scale(0.96);
+        transition-duration: 0.1s;
       }
 
-      /* ── Primary action — soft tinted pill ─────────────────────────
-         "Write a comment" is the one prominent action on an article, so it
-         keeps a quiet sage-tinted fill (softer than solid, cleaner than an
-         outline) that deepens on hover. Read-More and the pager use the
-         quiet nav-tab style instead, so this one tint marks the primary. */
+      /* Primary action — the one sage-tinted pill per article
+         ("Write a comment"); everything else stays quiet. */
       .comment-toggle-btn {
         background: var(--accent-bg);
         color: var(--accent-color);
@@ -409,11 +390,9 @@
         transform: translateY(-2px);
       }
 
-      /* In-article labels — small, quiet text instead of pill buttons,
-         middle-dot separated like an editorial meta line
-         ("August 2025 · 读书 · 美食"). These tags only render in the
-         single-post meta row, so list pages are unaffected. Overrides the
-         shared button styling above by source order. */
+      /* In-article labels — quiet middle-dot-separated meta text, not
+         pills. Only rendered in the single-post meta row; overrides the
+         shared button styling by source order. */
       .post-tag {
         display: inline;
         background: transparent;
@@ -432,9 +411,8 @@
         margin: 0 8px;
         opacity: 0.6;
       }
-      /* No dangling separator before the first tag. On post pages the inline
-         date header isn't rendered (it lives in the margin rail), so without
-         this the first tag's leading middle-dot floats alone ("· 小说 · …"). */
+      /* No dangling middle-dot before the first tag (post pages have no
+         inline date before it). */
       .post-meta .post-tag:first-child::before { content: none; }
       .post-tag:hover {
         background: transparent;
@@ -462,6 +440,19 @@
         opacity: 0 !important;
         transform: translateY(8px) !important;
         pointer-events: none;
+        /* Asymmetric: quick exit, 0.5s decelerating return. Must finish
+           inside the JS 350ms swap window; !important because the base
+           transitions sit on higher-specificity selectors. */
+        transition-duration: 0.3s !important;
+        transition-timing-function: var(--ease) !important;
+      }
+
+      /* Cross-page crossfade (View Transitions API). Unsupported browsers
+         navigate normally; reduced-motion users keep instant navigation. */
+      @media (prefers-reduced-motion: no-preference) {
+        @view-transition {
+          navigation: auto;
+        }
       }
 
       /* Toggles */
@@ -494,10 +485,17 @@
         transform: translateY(-2px);
       }
 
+      /* Same instant-press feedback as the pill buttons. */
+      .action-btn:active {
+        transform: scale(0.92);
+        transition-duration: 0.1s;
+      }
+
       #theme-icon {
         width: 22px;
         height: 22px;
-        transition: transform 0.5s var(--ease);
+        /* Spring rotation — the toggle reads as a physical switch. */
+        transition: transform 0.5s var(--ease-spring);
       }
 
       [data-theme="dark"] #theme-icon {
@@ -558,10 +556,7 @@
       .header-title h1 {
         font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
         font-weight: 500;
-        /* Fluid headline — scales continuously with viewport (Apple style)
-           instead of snapping at a breakpoint. Tuned to equal the old flat
-           2.4rem around a 768px laptop and grow to 2.7rem on wide screens;
-           the <=600px rule below still pins phones to their own size. */
+        /* Fluid headline; the <=600px rule still pins phones. */
         font-size: clamp(2.3rem, 2.05rem + 0.7vw, 2.7rem);
         margin: 0;
         letter-spacing: -0.5px;
@@ -579,12 +574,8 @@
         border: none !important;
         padding: 12px 0;
         min-height: 60px;
-        /* Source the colour straight from the variable (not the global
-           a{color:inherit}). If it inherited the body's *animating* colour
-           while also carrying its own colour transition, the two would
-           compound into a ~0.5s lag behind the body. Keyed to the same var
-           change at the same 0.3s, the title now fades in lockstep with it.
-           The inner span and the fill:currentColor logo follow this link. */
+        /* Explicit var colour, not inherit: inheriting the body's animating
+           colour through an own transition would lag the theme fade. */
         color: var(--text-color);
         transition: transform 0.3s var(--ease-spring), color 0.3s var(--ease);
       }
@@ -600,9 +591,7 @@
       }
 
       .header-desc {
-        /* Cursive tagline under the title — a flowing script, a touch
-           larger so it reads comfortably. Script faces already slant, so
-           no italic. */
+        /* Cursive tagline; script faces already slant, so no italic. */
         font-family: 'Dancing Script', cursive;
         font-size: 1.3rem;
         font-weight: 500;
@@ -610,10 +599,10 @@
         color: var(--meta-color);
         margin-top: 10px;
         font-style: normal;
-        /* Left-aligned to sit under the left-aligned title/logo, instead
-           of floating centred and out of step with the header. */
+        /* Sits under the left-aligned title/logo. */
         text-align: left;
         max-width: 52ch;
+        text-wrap: balance;
         transition: color 0.3s var(--ease);
       }
 
@@ -621,32 +610,25 @@
       nav.main-nav {
         margin-bottom: 35px;
         text-align: center;
-        /* Default: visible — so hover lift renders fully and the few-tab
-           common case has zero scrollbar clutter. JS adds .is-scrolling
-           when labels actually overflow the container (e.g. user adds an
-           8th label), at which point we switch to scroll mode. */
+        /* Visible by default (hover lift never clips); JS adds
+           .is-scrolling only when the tabs actually overflow. */
         overflow: visible;
         position: relative;
       }
       nav.main-nav.is-scrolling {
         overflow-x: auto;
         scrollbar-width: none;
-        /* Internal vertical padding gives hover lift breathing room even
-           in scroll mode (overflow-x:auto forces overflow-y:auto, which
-           would clip the -2px lift). Horizontal padding keeps the first
-           tab aligned with the body text's left margin rather than
-           hugging the screen edge — same intent as the mobile rule. */
+        /* Vertical padding keeps the -2px hover lift from being clipped
+           (overflow-x:auto forces overflow-y:auto); horizontal padding
+           aligns the first tab with the text margin. */
         padding: 6px 20px;
         margin-top: -6px;
         margin-left: -20px;
         margin-right: -20px;
       }
       nav.main-nav.is-scrolling::-webkit-scrollbar { display: none; }
-      /* In scroll mode, flex items must align from the start, not center.
-         justify-content: center on a flex container wider than its viewport
-         centers content visually but locks scroll at position 0, cropping
-         both edges. flex-start lets scrollLeft=0 show the leftmost tabs
-         intact and the user scrolls right to reveal more. */
+      /* Scroll mode must start-align: centering an overflowing flex row
+         crops both edges with no way to scroll to them. */
       nav.main-nav.is-scrolling ul {
         justify-content: flex-start;
       }
@@ -675,14 +657,32 @@
         contain-intrinsic-size: 100px 500px;
         position: relative;
       }
-      /* But NOT on a single article: the whole post is one giant .post-outer,
-         and virtualising it makes the document scroll height track only the
-         rendered slice (~500px) instead of the article's real height. That
-         breaks every scroll-percentage feature — the reading-progress bar and
-         the mascot's halfway/finished lines never reach their thresholds. */
+      /* But NOT on a single article: virtualising the one giant .post-outer
+         corrupts the document scroll height, breaking every scroll-percentage
+         feature (progress bar, mascot milestones). */
       .post-outer:has(.post-body.full-content) {
         content-visibility: visible;
         contain-intrinsic-size: auto;
+      }
+
+      /* Scroll-linked card entrance, list pages only (:has keeps it off
+         the single-post view). Progressive enhancement — browsers without
+         animation-timeline ignore it. Linear timing: the scroll position
+         IS the easing. */
+      @keyframes card-rise {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: none; }
+      }
+      @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+          .blog-posts .post-outer:has(.post-body.snippet-content) {
+            animation-name: card-rise;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: view();
+            animation-range: entry 0% entry 38%;
+          }
+        }
       }
 
       /* Subtle divider between posts on list pages */
@@ -696,11 +696,8 @@
         opacity: 0.7;
       }
 
-      /* ── Infinite scroll UI ────────────────────────────────────────
-         An invisible sentinel sits below the last post; IntersectionObserver
-         starts loading when it nears the viewport. While loading, a pulsing
-         dot row signals activity. End and error states replace the loading
-         row with terminating dingbat or a retry button. */
+      /* Infinite-scroll UI: invisible sentinel + status row (pulsing dot
+         while loading, dingbat at the end, retry button on error). */
       .infinite-sentinel {
         height: 1px;
         margin-top: 40px;
@@ -764,6 +761,10 @@
         color: var(--accent-color);
         transform: translateY(-1px);
       }
+      .infinite-status .retry-btn:active {
+        transform: scale(0.96);
+        transition-duration: 0.1s;
+      }
 
       h2.post-title {
         font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
@@ -773,18 +774,14 @@
         margin: 0 0 10px;
         line-height: 1.45;
         font-weight: 500;
-        /* Slight negative tracking on the large serif title — the same
-           display refinement Anthropic/Apple use on big headlines. Reset
-           for CJK below, where tighter tracking reads cramped. */
+        /* Display tracking for big serif headlines; reset for CJK below. */
         letter-spacing: -0.3px;
         word-break: normal;
         overflow-wrap: anywhere;
         text-wrap: balance;
         hyphens: auto;
-        /* NO own colour/transition: the title inherits the body's colour and
-           follows its 0.3s fade exactly, like the body paragraphs do. Giving
-           it its own colour transition made it *chase* the body's animation
-           instead, compounding into the ~0.5s lag. */
+        /* NO own colour/transition — it would chase the body's theme fade
+           and lag behind it. */
       }
 
       /* Chinese titles: allow breaking between any characters to prevent overflow,
@@ -803,8 +800,7 @@
         display: inline-block;
         padding: 10px 0;
         min-height: 48px;
-        /* Explicit var colour so theme-switch fade and hover→accent are
-           both clean (no inherit-chasing lag). */
+        /* Explicit var colour — no inherit-chasing lag on theme fade. */
         color: var(--text-color);
         transition: color 0.3s var(--ease), transform 0.3s var(--ease-spring);
       }
@@ -817,8 +813,7 @@
 
       .post-meta {
         font-size: 0.85rem;
-        /* Old-style figures so the date numerals sit as editorial text,
-           consistent with the article headings, quotes and margin rails. */
+        /* Old-style figures — date numerals sit as editorial text. */
         font-feature-settings: "onum" 1, "liga" 1;
         color: var(--meta-color);
         margin-bottom: 20px;
@@ -832,30 +827,28 @@
       .post-body.full-content {
         font-size: 1.15rem;
         word-break: break-word;
-        /* Default to the CJK typography (the blog's dominant language) so the
-           post-load typography pass is a no-op for Chinese posts and doesn't
-           reflow the text after first paint (the main CLS source). English
-           posts are retuned by that pass; CSS here just sets the start state. */
+        /* CJK metrics as the CSS default so the post-load typography pass
+           is a no-op for Chinese posts (no reflow = no CLS); English posts
+           are retuned by that pass. */
         line-height: 2.2;
         text-align: justify;
-        /* Editorial polish: enable ligatures + contextual alternates so
-           Inter sets cleanly, and let the browser optimise legibility. */
         font-feature-settings: "liga" 1, "calt" 1;
         text-rendering: optimizeLegibility;
+        /* Classical CJK typesetting (Safari-only; others ignore it):
+           opening quotes hang into the margin, line-end punctuation may
+           tuck in so justification stays even. */
+        hanging-punctuation: first allow-end;
       }
 
-      /* Lead paragraph — the opening paragraph reads a touch larger and
-         calmer, an editorial intro in the spirit of Anthropic's long-form
-         pages. Language-safe: no drop cap (CJK can't take one cleanly). */
+      /* Lead paragraph — slightly larger editorial intro. No drop cap
+         (CJK can't take one cleanly). */
       .post-body.full-content > p:first-of-type {
         font-size: 1.22rem;
         line-height: 1.85;
       }
 
       .post-body a {
-        /* Explicit var colour (not inherited) so the theme-toggle fade
-           can't compound into a lag behind the body — same fix as the
-           titles. Hover→accent stays clean too. */
+        /* Explicit var colour — no inherit-chasing lag on theme fade. */
         color: var(--text-color);
         text-decoration: underline;
         text-decoration-thickness: 1px;
@@ -874,8 +867,7 @@
         display: block;
       }
 
-      /* Images sit flatter now — a soft, tight shadow rather than a big
-         floaty one, in keeping with Anthropic's flat-surface aesthetic. */
+      /* Flat-surface aesthetic: soft, tight image shadow. */
       .post-body img {
         max-width: 100%;
         height: auto;
@@ -883,11 +875,14 @@
         margin: 30px auto;
         display: block;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
+        transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out), filter 0.5s var(--ease-out);
       }
 
+      /* Dim photos slightly in the dark theme to cut glare (standard
+         dark-mode practice); full brightness returns on hover. */
       [data-theme="dark"] .post-body img {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        filter: brightness(0.92);
       }
 
       .post-body img:hover {
@@ -897,6 +892,7 @@
 
       [data-theme="dark"] .post-body img:hover {
         box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+        filter: brightness(1);
       }
 
       .separator {
@@ -904,9 +900,7 @@
         background: transparent !important;
       }
 
-      /* Section break — replace the default 1px line with three centered
-         dots, like a typesetter's flourish between scenes. Pure CSS, the
-         hr stays semantic (still announces as a separator to screen readers). */
+      /* Section break as three centered dots; the hr stays semantic. */
       .post-body hr {
         border: none;
         background: none;
@@ -916,35 +910,23 @@
         overflow: visible;
       }
       .post-body hr::before {
-        /* \0000B7 is the CSS Unicode escape for U+00B7 (middle dot), using
-           the full 6-digit form so no whitespace terminator is needed.
-           Using escapes instead of the literal character prevents Blogger's
-           XML serializer from emitting "&#183;" on output. The three dots
-           are spaced apart purely via letter-spacing — no literal spaces
-           in the string. */
+        /* 6-digit escapes for U+00B7 keep Blogger's XML serializer from
+           re-encoding the literal character; spacing is via letter-spacing. */
         content: '\0000B7\0000B7\0000B7';
         display: block;
         color: var(--meta-color);
         letter-spacing: 0.8em;
         font-size: 0.85em;
         line-height: 1;
-        /* Subtract half the letter-spacing on the right so the dots are
-           optically centered (otherwise the trailing letter-spacing
-           pushes them left) */
+        /* Offsets the trailing letter-spacing to optically center the dots. */
         padding-left: 0.8em;
       }
 
-      /* ── Rich article content ──────────────────────────────────────
-         Long-form bodies contain headings, quotes, lists, code and
-         tables that Blogger emits with no classes, so without these
-         rules they fall back to raw browser defaults and break the
-         warm-paper, Garamond-and-Inter rhythm. Scoped to .full-content
-         so list-page snippets stay untouched. Purely visual — no logic
-         depends on any of these selectors. */
+      /* ── Rich article content — Blogger emits headings/quotes/lists/code/
+         tables with no classes; style them into the theme's rhythm.
+         Scoped to .full-content so list snippets stay untouched. */
 
-      /* Section headings inside an article. Garamond like every other
-         heading in the theme; sizes step down from the 1.85rem post
-         title so the document hierarchy reads cleanly. */
+      /* Section headings: Garamond, stepping down from the post title. */
       .post-body.full-content h2,
       .post-body.full-content h3,
       .post-body.full-content h4 {
@@ -952,23 +934,27 @@
         font-weight: 500;
         line-height: 1.35;
         color: var(--text-color);
+        /* Editorial rhythm: more air above than below — a heading belongs
+           to the text that follows it. h2/h3 widen the top gap below. */
         margin: 1.8em 0 0.5em;
         letter-spacing: -0.2px;
-        /* Old-style figures let any numerals in headings sit like text */
+        /* Anchor jumps shouldn't pin the heading to the viewport edge. */
+        scroll-margin-top: 2.5rem;
+        /* Old-style figures; balanced wrap for multi-line subheads. */
         font-feature-settings: "onum" 1, "liga" 1;
-        /* Balance short multi-line subheads so no lonely last word hangs —
-           a modern refinement; older browsers simply ignore it. */
         text-wrap: balance;
       }
-      .post-body.full-content h2 { font-size: 1.6rem; }
-      .post-body.full-content h3 { font-size: 1.35rem; }
+      .post-body.full-content h2 { font-size: 1.6rem; margin-top: 2.2em; }
+      .post-body.full-content h3 { font-size: 1.35rem; margin-top: 2em; }
+      /* Consecutive headings read as one unit — tuck the subhead close. */
+      .post-body.full-content h2 + h3,
+      .post-body.full-content h3 + h4 { margin-top: 0.6em; }
       .post-body.full-content h4 { font-size: 1.12rem; font-weight: 600; }
       /* No runaway top gap when a heading opens the article */
       .post-body.full-content > :first-child { margin-top: 0; }
 
-      /* Blockquote — a quiet sage rule in the margin rather than a heavy
-         bar. Serif + meta colour gives it a "set apart" voice. Not
-         italicised: synthetic-slanted CJK reads poorly. */
+      /* Blockquote — sage margin rule, serif "set apart" voice. Not
+         italic: synthetic-slanted CJK reads poorly. */
       .post-body.full-content blockquote {
         margin: 1.8em 0;
         padding: 0.2em 0 0.2em 1.4em;
@@ -977,8 +963,6 @@
         font-family: 'EB Garamond', 'EB Garamond Fallback', Georgia, serif;
         font-size: 1.2rem;
         line-height: 1.7;
-        /* Old-style figures + balanced wrap so any year/number in a pull
-           quote sits like running text and the lines break evenly. */
         font-feature-settings: "onum" 1, "liga" 1;
         text-wrap: pretty;
       }
@@ -1000,7 +984,7 @@
 
       /* Inline code + fenced blocks share the quiet button-bg tint */
       .post-body.full-content code {
-        font-family: 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+        font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
         font-size: 0.88em;
         background: var(--btn-bg);
         padding: 0.15em 0.4em;
@@ -1013,10 +997,13 @@
         border-radius: 8px;
         padding: 16px 18px;
         overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) transparent;
         font-size: 0.9rem;
         line-height: 1.6;
         margin: 1.6em 0;
       }
+
       .post-body.full-content pre code {
         background: none;
         padding: 0;
@@ -1024,6 +1011,15 @@
         font-size: inherit;
         word-break: normal;
       }
+
+      /* Keep superscripts/subscripts from stretching the line box. */
+      .post-body.full-content sup,
+      .post-body.full-content sub { line-height: 1; }
+
+      /* Embedded media must never overflow the reading column. */
+      .post-body.full-content iframe,
+      .post-body.full-content video,
+      .post-body.full-content embed { max-width: 100%; }
 
       /* Tables — hairline borders, tinted header row */
       .post-body.full-content table {
@@ -1054,7 +1050,22 @@
         font-size: 0.9rem;
         color: var(--meta-color);
         text-align: center;
+        /* Multi-line captions wrap into even lines, no orphan word. */
+        text-wrap: balance;
       }
+
+      /* Inline highlights — a warm coral wash (the theme's secondary
+         tone) instead of the browser's hard yellow. */
+      .post-body.full-content mark {
+        background: color-mix(in srgb, var(--persimmon) 24%, transparent);
+        color: inherit;
+        padding: 0.05em 0.2em;
+        border-radius: 4px;
+      }
+
+      /* Footnote markers must not open gaps between lines. */
+      .post-body.full-content sup,
+      .post-body.full-content sub { line-height: 1; }
 
       /* Comfortable paragraph rhythm — explicit spacing so prose breathes
          evenly regardless of how Blogger emits the markup. */
@@ -1063,11 +1074,8 @@
          Purely presentational; unsupported browsers ignore it. */
       .post-body.full-content p { margin: 0 0 1.4em; text-wrap: pretty; }
 
-      /* Homepage preview reads like the real article: same body size, full
-         opacity, same editorial polish — no dim/hover-brighten. It's kept
-         concise by the length cap in the markup (snippet length), not by
-         shrinking or fading the text. Line-height is set per-language by the
-         typography JS pass (same as the article body), so none here. */
+      /* Homepage preview reads like the real article — kept short by the
+         snippet length cap, not by shrinking or fading the text. */
       .post-body.snippet-content {
         font-size: 1.15rem;
         color: var(--text-color);
@@ -1096,12 +1104,21 @@
         margin-bottom: 0;
         display: block;
         box-shadow: none;
-        transition: transform 0.6s var(--ease-out);
+        transition: transform 0.6s var(--ease-out), filter 0.5s var(--ease-out);
+      }
+
+      /* Same dark-mode glare cut as article images. */
+      [data-theme="dark"] .featured-img-wrapper img {
+        filter: brightness(0.92);
       }
 
       .featured-img-wrapper:hover img {
         transform: scale(1.03);
         box-shadow: none;
+      }
+
+      [data-theme="dark"] .featured-img-wrapper:hover img {
+        filter: brightness(1);
       }
 
       /* Pagination */
@@ -1131,9 +1148,8 @@
         font-weight: 500;
       }
 
-      /* Related posts — a clean row list with hairline dividers. On hover
-         the title slides right and a sage arrow glides in from the left,
-         an editorial cue rather than the old dashed underline. */
+      /* Related posts — hairline row list; on hover the title slides
+         right and a sage arrow glides in. */
       .related-posts ul {
         list-style: none;
         padding: 0;
@@ -1201,16 +1217,10 @@
         grid-template-rows: 1fr;
         opacity: 1;
         pointer-events: auto;
-      }
-
-      /* Open form spacing: 15px vertical gap. When the form follows the main
-         toggle button directly inside .comments-wrapper, pull it up 5px to
-         tuck closer to the button. The selector covers both placements
-         (top-level main form and inline reply form) without duplication. */
-      #custom-comment-form-container.is-expanded {
         margin-top: 15px;
         margin-bottom: 15px;
       }
+      /* Directly under the main toggle button: tuck 5px closer. */
       .comments-wrapper > #custom-comment-form-container.is-expanded {
         margin-top: -5px;
       }
@@ -1241,19 +1251,14 @@
         width: calc(100% + 54px) !important;
         max-width: none !important;
         flex-shrink: 0;
-        /* Re-tint the iframe's pure-white body to the warm ivory paper bg
-           (#faf9f4 = rgb 250,249,244). sepia(0.35) drops the blue channel to
-           ~244 for the warmth; brightness(0.98) lands red/green on ~250 —
-           hitting the exact paper tone so the editor disappears into it. */
+        /* Re-tint the iframe's white body to the exact paper tone
+           (#faf9f4) so the editor disappears into the page. */
         filter: sepia(0.35) brightness(0.98);
       }
 
       [data-theme="dark"] .comments-wrapper iframe#comment-editor {
-        /* Land the body on the warm charcoal bg (#1a1915 ≈ rgb 26,25,21).
-           invert(0.9) flips white→rgb(26) grey; hue-rotate keeps any
-           coloured text sane; brightness(0.89)+sepia(0.42) then warm it
-           down to ≈ rgb(26,25,22) — effectively the same tone as the bg,
-           so the editor blends instead of reading as a cool grey box. */
+        /* Invert + warm the white body to the charcoal bg (#1a1915);
+           hue-rotate keeps coloured text sane. */
         filter: invert(0.9) hue-rotate(180deg) brightness(0.89) sepia(0.42) !important;
       }
 
@@ -1522,8 +1527,7 @@
         z-index: 1 !important;
       }
 
-      /* Footer — Anthropic-style airy rhythm: more space above the rule
-         and around the social row so the page closes calmly. */
+      /* Footer — airy rhythm so the page closes calmly. */
       .site-footer {
         padding: 50px 0 40px;
         border-top: 1px solid var(--border-color);
@@ -1550,9 +1554,8 @@
         background: none;
         border-radius: 50%;
         border: none;
-        /* Unified with the header .action-btn icon buttons: bare by default,
-           a quiet bg + sage on hover, same -2px lift. Explicit var colour
-           keeps the icon's fill:currentColor fading cleanly on theme toggle. */
+        /* Matches the header .action-btn treatment; explicit var colour
+           keeps fill:currentColor fading cleanly on theme toggle. */
         color: var(--icon-color);
         transition: background 0.3s var(--ease), color 0.3s var(--ease), transform 0.3s var(--ease-spring);
       }
@@ -1561,6 +1564,11 @@
         background: var(--btn-bg);
         color: var(--accent-color);
         transform: translateY(-2px);
+      }
+
+      .social-links a:active {
+        transform: scale(0.92);
+        transition-duration: 0.1s;
       }
 
       .social-links svg {
@@ -1602,6 +1610,14 @@
           margin-bottom: 16px;
         }
 
+        /* Wide tables scroll sideways instead of stretching the page. */
+        .post-body.full-content table {
+          display: block;
+          overflow-x: auto;
+          scrollbar-width: thin;
+          scrollbar-color: var(--border-color) transparent;
+        }
+
         nav.main-nav {
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
@@ -1630,18 +1646,13 @@
         .reply-toggle-btn::before { left: -14px !important; width: 14px !important; height: 26px !important; top: -10px !important; border-bottom-left-radius: 12px !important; }
       }
 
-      /* Desktop layout (>=1024px) — restrained marginalia. The 700px reading
-         column and its typography are unchanged; this only adds three additive
-         margin flourishes: a date label in the left margin (vertical for CJK),
-         a mirrored reading-time label on the right, and a hover marker beside
-         the paragraph under the cursor. Reading flow is untouched. */
+      /* Desktop marginalia (>=1024px) — additive flourishes only; the
+         reading column is untouched. */
       @media (min-width: 1024px) {
 
-        /* ── Margin notes: date (left) + read time (right) ────── */
-        /* Both rails sit vertically centered on the viewport so they
-           read as a balanced pair of page margin notes. Chinese gets
-           vertical writing (square characters handle it well); Latin
-           stays horizontal (rotated Latin glyphs are hard to read). */
+        /* Margin rails: date (left) + read time (right), a centered pair.
+           Chinese is set vertically; rotated Latin is hard to read, so
+           English stays horizontal. */
         .desktop-date-rail,
         .desktop-readtime-rail {
           position: fixed;
@@ -1649,8 +1660,6 @@
           transform: translateY(-50%);
           font-family: 'EB Garamond', 'EB Garamond Fallback', 'Cormorant Garamond', Georgia, serif;
           font-style: italic;
-          /* Old-style figures so the year in the date rail reads as
-             manuscript marginalia rather than tabular digits. */
           font-feature-settings: "onum" 1, "liga" 1;
           font-size: 0.85rem;
           color: var(--meta-color);
@@ -1684,20 +1693,15 @@
           letter-spacing: 4px;
           white-space: nowrap;
         }
-        /* Read-time English: slightly tighter tracking since digits don't
-           need as much air as month names */
+        /* Digits need less air than month names. */
         .desktop-readtime-rail .lang-en {
           letter-spacing: 1.5px;
           white-space: nowrap;
         }
       }
 
-      /* ── Reading progress bar + tap-to-top ─────────────────────────
-         A thin sage line pinned to the bottom edge fills as the reader
-         descends, and the whole strip (with a taller invisible hit area)
-         is tappable to glide back to the top. A small bilingual hint pill
-         teaches the gesture — it appears when the bar first shows and again
-         when reading completes, then auto-fades. Desktop + mobile. */
+      /* ── Reading progress bar + tap-to-top (desktop + mobile). A hint
+         pill teaches the gesture, then auto-fades. */
       .reading-bar {
         position: fixed;
         left: 0;
@@ -1730,9 +1734,8 @@
         transform: scaleX(0);
         transform-origin: left center;
         background: var(--accent-color);
-        /* Animate transform (compositor-only) rather than width (re-layouts
-           every frame) for a buttery fill; a short linear tween smooths the
-           gaps between scroll samples without feeling laggy. */
+        /* Transform is compositor-only (width re-layouts every frame);
+           the short linear tween smooths gaps between scroll samples. */
         transition: transform 0.1s linear, background 0.3s var(--ease);
         will-change: transform;
       }
@@ -1741,13 +1744,7 @@
         height: 5px;
       }
 
-      /* Floating hint pill — a small dark/light capsule above the bar that
-         explains the tap-to-top gesture. Bilingual via lang spans, so it
-         follows the site language toggle. */
-      /* A quiet paper pill in the theme's editorial-note voice: warm bg, a
-         hairline border, EB Garamond italic in meta grey, with a small sage
-         arrow tying it to the progress bar. Same palette/variables as the
-         margin rails, figure captions and quiet buttons. */
+      /* Hint pill above the bar — glass capsule, bilingual via lang spans. */
       .reading-hint {
         position: fixed;
         bottom: 18px;
@@ -1777,9 +1774,7 @@
         font-weight: 600;
         margin-right: 7px;
       }
-      /* Chinese reads upright — Garamond italic is lovely for Latin but CJK
-         has no italic face. (Belt-and-suspenders with the global
-         font-synthesis rule, and guaranteed on older browsers too.) */
+      /* CJK has no italic face — keep Chinese upright. */
       .reading-hint .lang-zh {
         font-style: normal;
       }
@@ -1788,15 +1783,9 @@
         transform: translateX(-50%) translateY(0);
       }
 
-      /* Reopen desktop block for the paragraph hover marker
-         (this one IS desktop-only — touch devices have no hover state) */
+      /* Paragraph hover marker — desktop only (touch has no hover): a
+         faint editor's tick in the margin beside the hovered paragraph. */
       @media (min-width: 1024px) {
-
-        /* ── Paragraph hover marker — extremely subtle ────────── */
-        /* Only applies inside long-form article body. A tiny vertical
-           line appears in the left margin when hovering a paragraph,
-           like a faint editor's mark. Stays under the radar but adds
-           a touch of life to the reading column. */
         .post-body.full-content > p,
         .post-body.full-content > blockquote {
           position: relative;
@@ -1851,14 +1840,10 @@
         opacity: 0;
         transform: translateY(16px);
         transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
-        /* The container box equals the figure (bubble, gear and menu are
-           absolutely positioned), so it only sits in the corner — fine to be
-           interactive there so :hover reveals the gear. */
+        /* Container box equals the figure; bubble/gear/menu are absolute. */
       }
-      /* Invisible hover-detection halo: extends the interactive area beyond
-         the figure (especially upward, where the gear bar floats) so moving
-         the pointer toward the button doesn't cross a dead zone and lose the
-         :hover state. Sits behind the figure so it never steals its clicks. */
+      /* Invisible hover halo so the pointer can travel to the floating gear
+         without losing :hover. Behind the figure — never steals clicks. */
       .mascot::before {
         content: "";
         position: absolute;
@@ -1891,20 +1876,14 @@
         50%      { transform: translateY(-6px); }
       }
 
-      /* ── Reduced-motion: respect the OS "minimize motion" setting ──────
-         Switch off the looping idle bob and the larger zoom-on-hover scales
-         — the showy, continuous/large motions Apple disables under this
-         preference. Quiet hover feedback (the small button/icon lifts) is
-         kept, and functional transitions (collapse, fades, theme toggle)
-         are untouched so nothing breaks. */
+      /* Reduced motion: kill the idle bob and hover zooms; keep functional
+         transitions. */
       @media (prefers-reduced-motion: reduce) {
         .mascot-img { animation: none; }
         .post-body img:hover,
         .featured-img-wrapper:hover img { transform: none; }
-        /* Calm the popovers: let the bubble and settings menu fade in place
-           rather than springing/sliding (opacity still handles show/hide).
-           Scoped to these two — NOT .mascot itself, whose transform drives
-           the edge-tuck positioning. */
+        /* Popovers fade in place. NOT .mascot itself — its transform
+           drives the edge-tuck positioning. */
         .mascot-bubble,
         .mascot-menu { transform: none !important; }
       }
@@ -1920,16 +1899,14 @@
       [data-theme="dark"] .mascot-dragging .mascot-img {
         filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55));
       }
-      /* While the size slider is dragged: scale the figure on the GPU only
-         (the container box stays put, so the menu/slider don't jump), and
-         drop the bob + shadow so it's smooth. Real width commits on release. */
+      /* Size-slider drag: GPU-scale only (container box stays put so the
+         menu doesn't jump); real width commits on release. */
       .mascot-resizing .mascot-img {
         animation: none;
         filter: none;
         transform-origin: center bottom;
       }
-      /* Stop compositing the bob when the figure is dismissed or resting
-         tucked — no point animating something that's invisible/parked. */
+      /* Don't animate what's invisible or parked. */
       .mascot.is-hidden .mascot-img,
       .mascot.is-tucked .mascot-img { animation-play-state: paused; }
       /* Dragged mostly off-screen → fade to signal "let go to hide". */
@@ -1950,12 +1927,9 @@
         margin-bottom: 4px;
         max-width: 210px;
         width: max-content;
-        /* Opaque solid fill, no backdrop-filter (paints on the main layer).
-           Crucially, the text colour is NOT set here: the bubble inherits the
-           body's animating colour and carries NO colour transition of its own —
-           exactly like the article paragraphs — so its text inverts in lockstep
-           with the page on a theme toggle. Giving the bubble its own colour
-           transition rode a separate timeline and lagged a beat behind. */
+        /* Opaque fill, no backdrop-filter. Text colour deliberately NOT
+           set — inheriting the body's animating colour keeps the bubble
+           in lockstep on theme toggle (an own transition would lag). */
         background-color: rgb(250, 248, 242);
         border: none;
         border-radius: 16px;
@@ -1974,8 +1948,7 @@
         opacity: 1;
         transform: translateY(0) scale(1);
       }
-      /* little tail pointing down to the figure — matches the bubble fill so it
-         inverts in step on a theme toggle. */
+      /* Tail matches the bubble fill so it inverts in step. */
       .mascot-bubble::after {
         content: '';
         position: absolute;
@@ -1989,8 +1962,7 @@
         transition: background-color 0.3s var(--ease);
       }
       [data-theme="dark"] .mascot-bubble::after { background-color: rgb(48, 47, 43); }
-      /* Near the top of the screen the bubble flips BELOW the figure so it
-         isn't clipped; the tail then points up. */
+      /* Near the top of the screen the bubble flips below the figure. */
       .mascot.bubble-below .mascot-bubble {
         bottom: auto;
         top: 100%;
@@ -2004,8 +1976,7 @@
         border-bottom-right-radius: 0;
         border-top-left-radius: 3px;
       }
-      /* On the right side of the screen the bubble grows LEFTWARD so it isn't
-         cut off; the tail moves to the right edge. */
+      /* On the right half of the screen the bubble grows leftward. */
       .mascot.bubble-left .mascot-bubble {
         left: auto;
         right: 22px;
@@ -2017,28 +1988,23 @@
         right: 26px;
       }
 
-      /* Tucked: after snapping to a side, the figure rests half off-screen;
-         hovering or tapping makes it peek back out. */
-      /* Tucked idle uses a dedicated peek-left/right PNG, so keep it fully
-         opaque (no dimming) — the art is designed to read at the edge. */
+      /* Tucked: rests half off-screen after snapping to a side; hover/tap
+         peeks it back out. Dedicated peek art — keep it fully opaque. */
       .mascot.is-tucked { opacity: 1; }
-      /* Left/right peek art isn't mirror-symmetric — the gripping hand sits at
-         x≈178/400 on the left vs x≈215/400 on the right — so the left needs a
-         slightly smaller shift to reveal the same amount of hand as the right. */
+      /* Peek art isn't mirror-symmetric; the left shift is tuned smaller
+         to reveal the same amount of hand. */
       .mascot.is-tucked.tuck-left  { transform: translateX(-52%); }
       .mascot.is-tucked.tuck-right { transform: translateX(54%); }
       .mascot.is-tucked .mascot-settings,
       .mascot.is-tucked .mascot-menu,
       .mascot.is-tucked .mascot-bubble { opacity: 0 !important; pointer-events: none !important; }
 
-      /* ── Settings gear — a floating glass pill centred above the figure;
-         hidden until the pointer nears, with a nav-tab sage tint + lift on
-         hover. Hover-reveal logic continues below. */
+      /* Settings gear — floating glass pill above the figure, revealed
+         when the pointer nears. */
       .mascot-settings {
         position: absolute;
         bottom: 100%;
         left: 50%;
-        transform: translateX(-50%);
         margin-bottom: 9px;
         display: inline-flex;
         align-items: center;
@@ -2073,9 +2039,8 @@
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
       }
-      /* The bar shares the space just above the figure with the speech
-         bubble — so while a line is showing, tuck the bar away (it returns
-         when the bubble clears). Keeps them from ever overlapping. */
+      /* The gear shares the space above the figure with the bubble —
+         tuck it away while a line is showing. */
       .mascot:has(.mascot-bubble.is-shown) .mascot-settings {
         opacity: 0;
         transform: translateX(-50%) translateY(5px);
@@ -2094,8 +2059,7 @@
         transform: translateX(-50%) translateY(-1px) scale(0.95);
         transition-duration: 0.08s;
       }
-      /* Near the top of the screen the figure's "above" zone is off-screen,
-         so the bar (and the menu below) drop BELOW the figure instead. */
+      /* Near the top of the screen the gear drops below the figure. */
       .mascot.bubble-below .mascot-settings {
         bottom: auto;
         top: 100%;
@@ -2103,9 +2067,8 @@
         margin-top: 10px;
       }
 
-      /* ── Settings popover — pops out beside the figure ─────────────────
-         JS sets the inline left/top (which side + clamped to viewport); the
-         side-* class drives the slide-out entrance from the figure's edge. */
+      /* Settings popover — JS sets inline left/top (side + viewport clamp);
+         the side-* class drives the slide-out entrance. */
       .mascot-menu {
         position: absolute;
         left: 0;
@@ -2163,17 +2126,13 @@
       .mascot-menu button[aria-pressed="true"]::after { content: '\2713'; font-size: 0.85em; }
       .mascot-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 6px 5px; }
       .mascot-menu .menu-hide { color: var(--meta-color); }
-      /* Coral tint signals the "remove" action while the text stays the
-         themed (readable) colour — coral is a mid-tone that fails AA as text. */
+      /* Coral wash marks "remove"; the text stays themed — coral itself
+         fails AA as text. */
       .mascot-menu .menu-hide:hover { color: var(--text-color); background: color-mix(in srgb, var(--persimmon) 16%, transparent); }
 
-      /* Dark-mode contrast on the frosted settings panel. Three elements sat
-         too close to the panel tone: the hide-mascot label (was --meta-color,
-         ~4.1:1, under AA) → brighter warm grey; the divider <hr> and slider
-         track (were --border-color) → a faint light tint so they read on the
-         glass. Light mode is fine as-is. The slider track and its Firefox
-         equivalent are separate rules — a vendor pseudo-element in a shared
-         selector list voids the whole rule elsewhere. */
+      /* Dark-mode contrast on the frosted panel: brighter hide label (AA)
+         and lighter divider/slider track. The -moz track is a separate
+         rule — an unknown vendor pseudo voids a shared selector list. */
       [data-theme="dark"] .mascot-menu .menu-hide {
         color: #a8a59b;
       }
@@ -2225,14 +2184,16 @@
         background: var(--border-color);
       }
 
-      /* Collapsed re-open handle — back to its original shape: a small tab
-         peeking from the left edge, now wearing the shared glass material. */
+      /* Collapsed re-open handle — a glass tab peeking from the edge. */
       .mascot-reopen {
         position: fixed;
         left: 0;
         bottom: 16px;
         width: 46px;
         height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border-radius: 0 50% 50% 0;
         overflow: hidden;
         background: var(--glass-bg);
@@ -2245,15 +2206,13 @@
         padding: 0;
         opacity: 0;
         transform: translateX(-100%);
-        /* Snappy slide-in so it reads like a magnetic snap to the edge when it
-           appears (matching the handle's own snap), not a slow fade. */
+        /* Snappy slide-in — a magnetic snap to the edge, not a slow fade. */
         transition: opacity 0.22s var(--ease), transform 0.2s var(--ease-out),
                     color 0.3s var(--ease), background 0.3s var(--ease), box-shadow 0.3s var(--ease);
         box-shadow: var(--glass-drop), var(--glass-edge), inset 0 0 0 100px transparent;
         pointer-events: none;
       }
       .mascot-reopen.is-visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
-      .mascot-reopen { display: flex; align-items: center; justify-content: center; }
       .mascot-reopen svg {
         width: 20px;
         height: 20px;
@@ -2289,26 +2248,17 @@
       }
       .mascot-reopen.is-grabbing svg { margin: 0; }
 
-      @media (prefers-reduced-motion: reduce) {
-        .mascot-img { animation: none; }
-      }
       /* Compact on small screens (kept on mobile, just smaller) */
       @media (max-width: 600px) {
         .mascot { width: 96px; left: 8px; }
-        /* Responsive size guard: a scale saved on desktop is applied to the
-           desktop base width via inline style, which can blow the figure up
-           to ~40% of a phone screen and crowd the text. Cap it here — a
-           stylesheet max-width overrides the non-!important inline width
-           without touching the drag/resize JS. Default (96px) is unaffected. */
+        /* Cap a desktop-saved scale on phones: stylesheet max-width
+           overrides the inline width without touching the resize JS. */
         .mascot { max-width: min(140px, 40vw) !important; }
         .mascot-bubble { max-width: 150px; font-size: 0.8rem; }
       }
 
-      /* ── 404 page — the mascot's moment ────────────────────────────
-         A centered hero: the chibi looking puzzled, a speech bubble, a big
-         Garamond "404", and a quiet way home. The corner companion is
-         suppressed here (its script bails when #error-404 is present) so
-         this one is the star. */
+      /* 404 hero — the mascot's moment; the corner companion's script
+         bails when #error-404 is present. */
       .error-404 {
         text-align: center;
         padding: 30px 0 60px;
@@ -2366,10 +2316,8 @@
         margin-top: 0 !important;
       }
 
-      /* ── Global reduced-motion guard ───────────────────────────────
-         Honour the OS "reduce motion" setting site-wide: near-instant
-         transitions/animations and no smooth-scroll. The same restraint
-         Apple and Anthropic apply — motion is a finish, never a barrier. */
+      /* Global reduced-motion guard: near-instant transitions/animations,
+         no smooth scroll. */
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -2381,11 +2329,8 @@
         }
       }
 
-      /* ── Print ─────────────────────────────────────────────────────
-         When an article is printed or saved to PDF, drop the interactive
-         chrome (toggles, nav, pager, comments, margin rails, progress bar)
-         and reset to black ink on white so the reading column prints clean
-         and ink-frugal. Links show their URL for paper. */
+      /* Print: drop interactive chrome, black ink on white, links show
+         their URL. */
       @media print {
         .top-actions,
         nav.main-nav,
@@ -2426,6 +2371,11 @@
         }
         .post-outer {
           page-break-inside: auto;
+          /* The scroll-driven card entrance must never leave a card stuck
+             at its transparent start frame on paper. */
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
         }
         h2.post-title,
         .post-body.full-content h2,
@@ -2454,7 +2404,7 @@
           <span class='lang-en'>中</span>
         </button>
         <button aria-label='Toggle Dark Mode' class='action-btn' id='theme-toggle'>
-          <svg id='theme-icon' viewBox='0 0 24 24'>
+          <svg aria-hidden='true' id='theme-icon' viewBox='0 0 24 24'>
             <path class='moon-icon' d='M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'/>
             <g class='sun-icon'>
               <circle cx='12' cy='12' r='5'/>
@@ -2487,7 +2437,7 @@
               <div class='header-title'>
                 <h1>
                   <a class='header-logo-link' expr:href='data:blog.homepageUrl'>
-                    <svg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
+                    <svg aria-hidden='true' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
                       <defs>
                         <mask id='smoke-cut'>
                           <rect fill='white' height='100' width='100'/>
@@ -2639,7 +2589,8 @@
             <b:includable id='addComments'/>
             <b:includable id='commentAuthorAvatar'>
               <div class='avatar-image-container'>
-                <img alt='Avatar' class='author-avatar' expr:src='data:comment.authorAvatarSrc' height='35' width='35'/>
+                <!-- Comments always sit below the fold — safe to lazy-load. -->
+                <img alt='Avatar' class='author-avatar' decoding='async' expr:src='data:comment.authorAvatarSrc' height='35' loading='lazy' width='35'/>
               </div>
             </b:includable>
             <b:includable id='commentDeleteIcon' var='comment'>
@@ -2722,11 +2673,14 @@
 
               <b:if cond='data:view.isMultipleItems'>
                 <b:if cond='data:post.featuredImage'>
+                  <!-- srcset lets phones fetch the ~400px rendition and 2x
+                       screens the 1400px one instead of everyone paying for
+                       a fixed 700px file; src stays as the 700px fallback. -->
                   <a aria-hidden='true' class='featured-img-wrapper' expr:href='data:post.url' tabindex='-1'>
                     <b:if cond='data:i == 0'>
-                      <img decoding='async' expr:alt='data:post.title ?: &quot;Cover Image&quot;' expr:src='resizeImage(data:post.featuredImage, 700)' fetchpriority='high' height='400' loading='eager' width='700'/>
+                      <img decoding='async' expr:alt='data:post.title ?: &quot;Cover Image&quot;' expr:src='resizeImage(data:post.featuredImage, 700)' expr:srcset='resizeImage(data:post.featuredImage, 400) + &quot; 400w, &quot; + resizeImage(data:post.featuredImage, 700) + &quot; 700w, &quot; + resizeImage(data:post.featuredImage, 1400) + &quot; 1400w&quot;' fetchpriority='high' height='400' loading='eager' sizes='(max-width: 750px) calc(100vw - 40px), 700px' width='700'/>
                     <b:else/>
-                      <img decoding='async' expr:alt='data:post.title ?: &quot;Cover Image&quot;' expr:src='resizeImage(data:post.featuredImage, 700)' height='400' loading='lazy' width='700'/>
+                      <img decoding='async' expr:alt='data:post.title ?: &quot;Cover Image&quot;' expr:src='resizeImage(data:post.featuredImage, 700)' expr:srcset='resizeImage(data:post.featuredImage, 400) + &quot; 400w, &quot; + resizeImage(data:post.featuredImage, 700) + &quot; 700w, &quot; + resizeImage(data:post.featuredImage, 1400) + &quot; 1400w&quot;' height='400' loading='lazy' sizes='(max-width: 750px) calc(100vw - 40px), 700px' width='700'/>
                     </b:if>
                   </a>
                 </b:if>
@@ -2863,13 +2817,10 @@
 
       <script type='text/javascript'>
         //<![CDATA[
-        // Synchronous title wrap — runs during HTML parsing so titles render
-        // correctly on first paint with zero flash. Splits at CJK punctuation
-        // (and halfwidth colon for English subtitles), then wraps each phrase
-        // as inline-block;white-space:nowrap so the browser's only legal break
-        // point is BETWEEN phrases. Without this, greedy line-breaking puts
-        // the comma awkwardly mid-line (e.g. greedy fill packs 8 chars on
-        // the first line before breaking, instead of breaking at the comma).
+        // Synchronous title wrap (zero flash): split at CJK punctuation and
+        // wrap each phrase as inline-block/nowrap, so the only legal break
+        // point is BETWEEN phrases — greedy line-breaking would otherwise
+        // break mid-phrase instead of at the comma.
         (function() {
             const PUNCT = /(?<=[，。；！？：、:])/;
             const wrap = function(el) {
@@ -2886,18 +2837,15 @@
             };
             // Header site title
             wrap(document.querySelector('.header-logo-link > span'));
-            // Post titles — list pages use <h2><a>...</a></h2>, single-post
-            // pages render the title text directly inside <h2>
+            // List pages: <h2><a>; single posts: text directly in <h2>.
             document.querySelectorAll('h2.post-title').forEach(function(h2) {
                 wrap(h2.querySelector('a') || h2);
             });
         })();
 
-        // Active nav marker — purely presentational. Matches the current
-        // URL path against each nav link and tags the match with .is-active
-        // so you always know which section you're in. Runs synchronously
-        // (nav is already parsed above) for a flash-free first paint. Worst
-        // case it simply marks nothing — it can never break a page.
+        // Active nav marker — tags the link matching the current URL path
+        // with .is-active. Synchronous for a flash-free first paint; worst
+        // case marks nothing.
         (function() {
             const nav = document.querySelector('nav.main-nav');
             if (!nav) return;
@@ -2915,11 +2863,9 @@
             if (active) active.classList.add('is-active');
         })();
 
-        // Nav overflow detection — toggle scroll mode only when labels
-        // actually overflow the container. ResizeObserver covers window
-        // resize, font-load reflows, and the lang/variant toggles that
-        // change individual button widths. The CSS default is visible
-        // overflow so hover lift never gets clipped in the common case.
+        // Nav overflow detection — enter scroll mode only when the tabs
+        // actually overflow. ResizeObserver covers resize, font loads and
+        // the lang/variant toggles.
         (function() {
             const nav = document.querySelector('nav.main-nav');
             if (!nav) return;
@@ -2933,15 +2879,9 @@
                 window.addEventListener('resize', check);
             }
 
-            // Mouse-wheel horizontal scroll. Browsers don't auto-translate
-            // vertical wheel into horizontal scroll, so mouse users would be
-            // stuck unable to scroll an overflowing nav (touchpad users can
-            // 2-finger swipe; touch users can drag). We redirect the wheel
-            // delta only when:
-            //   1. The nav is actually in scroll mode (else let page scroll)
-            //   2. Vertical wheel dominates horizontal (user spun the wheel)
-            //   3. There's actual scrollable distance in that direction
-            // Otherwise the event passes through to the page's natural scroll.
+            // Redirect vertical wheel to horizontal scroll — but only in
+            // scroll mode, when vertical delta dominates, and when there's
+            // distance left in that direction; otherwise the page scrolls.
             nav.addEventListener('wheel', function(e) {
                 if (!nav.classList.contains('is-scrolling')) return;
                 if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
@@ -2954,18 +2894,15 @@
             }, { passive: false });
         })();
 
-        // Desktop margin rails — date (left) + read time (right).
-        // Single-post view, viewport >=1024px. The rails form a symmetric
-        // pair of margin notes flanking the reading column; pure decoration
-        // that doesn't interfere with the reading flow.
+        // Desktop margin rails — date (left) + read time (right); pure
+        // decoration on single posts, >=1024px.
         (function() {
             if (window.innerWidth < 1024) return;
             const postBody = document.querySelector('.post-body.full-content');
             if (!postBody) return;
 
-            // ── Date parser ────────────────────────────────────────────────
-            // Try three sources in reliability order: inline .post-meta text,
-            // sibling .date-header element, or the YYYY/MM URL segment.
+            // Date, in reliability order: .post-meta text, .date-header,
+            // or the YYYY/MM URL segment.
             const parseDate = function() {
                 const meta = document.querySelector('.post-meta');
                 if (meta) {
@@ -2988,9 +2925,8 @@
                 return null;
             };
 
-            // ── Reading-time estimator ─────────────────────────────────────
-            // Chinese: ~350 cpm (compact, no spaces). English: ~220 wpm.
-            // Mixed content gets a proportional blend. Floor at 1 minute.
+            // Reading time: Chinese ~350 cpm, English ~220 wpm, blended;
+            // floor 1 minute.
             const estimateReadMinutes = function(text) {
                 if (!text) return 1;
                 const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
@@ -3001,9 +2937,8 @@
                 return Math.max(1, Math.round(minutes));
             };
 
-            // ── Date display strings ───────────────────────────────────────
-            // English: "MAY · 2026" — small caps with tracking, horizontal.
-            // Chinese: fullwidth-digit year + zh month name, vertical (set in CSS).
+            // Display strings — EN: "MAY · 2026"; ZH: 〇-digit year + month
+            // name, set vertically by CSS.
             const EN_MONTHS = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
                              'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
             const ZH_MONTHS = ['一月','二月','三月','四月','五月','六月',
@@ -3015,8 +2950,7 @@
                 }).join('');
             };
             const toZhMinutes = function(n) {
-                // Up to 99 minutes — beyond that we render Arabic digits
-                // (a 100-minute reading time is unrealistic for a blog post).
+                // Chinese numerals up to 99; Arabic digits beyond.
                 if (n < 10) return ZH_DIGITS[n];
                 if (n >= 100) return String(n);
                 const tens = Math.floor(n / 10);
@@ -3051,19 +2985,14 @@
             document.body.appendChild(rtRail);
             rails.push(rtRail);
 
-            // Fade in both rails together one frame later, so they appear
-            // as a synchronized pair after the page settles
+            // Fade both rails in together one frame later.
             requestAnimationFrame(function() {
                 rails.forEach(function(el) { el.classList.add('is-ready'); });
             });
         })();
 
-        // Reading-progress bar + tap-to-top — single-post view only.
-        // A thin sage line pinned to the bottom edge fills as the reader
-        // descends; the whole strip (taller invisible hit area) is tappable
-        // to glide back to the top. A small bilingual hint teaches the
-        // gesture when the bar first appears and again at completion, then
-        // auto-fades; hovering the bar also reveals it.
+        // Reading-progress bar + tap-to-top — single posts only. A hint
+        // pill teaches the gesture on first appearance and at completion.
         (function() {
             const articleBody = document.querySelector('.post-body.full-content');
             if (!articleBody) return;
@@ -3078,8 +3007,7 @@
             bar.appendChild(fill);
             document.body.appendChild(bar);
 
-            // Bilingual hint pill — the lang spans are shown/hidden by the
-            // existing [data-lang] rules, so it tracks the language toggle.
+            // Bilingual hint pill — lang spans track the language toggle.
             const hint = document.createElement('div');
             hint.className = 'reading-hint';
             hint.setAttribute('aria-hidden', 'true');
@@ -3113,20 +3041,16 @@
                 if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
                 hint.classList.remove('is-shown');
             };
-            // Desktop: reveal while the pointer is over the bar, fade out
-            // as soon as it leaves.
+            // Desktop: reveal while hovering the bar.
             bar.addEventListener('mouseenter', function() { showHint(0); });
             bar.addEventListener('mouseleave', function() { hideHint(); });
 
             let appeared = false;
             let completedHinted = false;
             let ticking = false;
-            // Cache the article's document-bottom so the per-frame scroll
-            // handler never forces a layout read. Progress is measured against
-            // the END OF THE ARTICLE BODY (not the page), so it hits 100% as the
-            // last line reaches the viewport bottom, before comments/footer.
-            // Re-measure only when the article actually resizes (images loading)
-            // or the window resizes — not on every scroll tick.
+            // Cache the article's document-bottom (no layout read per frame).
+            // Progress targets the END of the article body — 100% before
+            // comments/footer. Re-measured only on article/window resize.
             let articleDocBottom = 0;
             const measureArticle = function() {
                 articleDocBottom = articleBody.getBoundingClientRect().bottom +
@@ -3169,36 +3093,29 @@
             update();
         })();
 
-        // ── Mascot ──────────────────────────────────────────────────────
-        // A chibi corner companion: greets by time of day, reacts to page
-        // events (copy, nav hover, article end, theme toggle), murmurs when
-        // idle, changes expression on click. Art loads on demand and the whole
-        // thing self-removes if it can't load (no broken images). Lines follow
-        // the language toggle.
+        // ── Mascot — chibi corner companion: greets, reacts to page events,
+        // murmurs when idle. Art loads on demand; self-removes if it can't
+        // load (never a broken image).
         (function() {
-            // The 404 page already shows the mascot as its hero — skip here.
+            // The 404 page shows the mascot as its hero — skip here.
             if (document.getElementById('error-404')) return;
 
-            // Where the mascot PNGs live (jsDelivr → blog-assets repo).
             var BASE = 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi';
             var HIDE_KEY = 'mascotHidden';
-            // Chatter level: 'full' (lively), 'less' (only key moments),
-            // 'mute' (figure stays, but silent). Remembered across visits.
+            // Chatter level: 'full' / 'less' (key moments only) / 'mute'.
             var CHAT_KEY = 'mascotChat';
             var chatLevel = 'full';
             try { chatLevel = localStorage.getItem(CHAT_KEY) || 'full'; } catch (e) {}
             var ambient = function() { return chatLevel === 'full'; };
-            // Stepless size: a scale factor (0.6–1.6) over the per-viewport
-            // base width, remembered across visits.
+            // Stepless size: scale 0.6–1.6 over the per-viewport base width.
             var SIZE_KEY = 'mascotScale';
             var mascotScale = 1;
             try { var sv = parseFloat(localStorage.getItem(SIZE_KEY)); if (sv) mascotScale = Math.min(1.6, Math.max(0.6, sv)); } catch (e) {}
 
             var wrap = document.createElement('div');
             wrap.className = 'mascot';
-            // The <img> starts srcless — the PNG is fetched only when the mascot
-            // is shown (see boot/show), so it never blocks first paint and costs
-            // nothing for visitors who've dismissed it.
+            // The <img> starts srcless — fetched only when shown, so it
+            // never blocks first paint and dismissed visitors pay nothing.
             var L = function(zh, en) { return '<span class="lang-zh">' + zh + '</span><span class="lang-en">' + en + '</span>'; };
             wrap.innerHTML =
                 '<button class="mascot-settings" type="button" aria-haspopup="true" aria-expanded="false" aria-label="看板娘设置 / Mascot settings">' +
@@ -3239,22 +3156,18 @@
             var bubble = wrap.querySelector('.mascot-bubble');
             var textEl = wrap.querySelector('.mascot-text');
 
-            // If the displayed art fails to load, retry once before giving up.
-            // jsDelivr occasionally returns a transient 503, and a hard removal
-            // on a flaky response would kill the mascot for the whole session.
-            // Only after the retry also fails do we remove everything (still
-            // never a broken image). A successful load resets the flag, so a
-            // later, unrelated failure gets its own single retry.
+            // Art load failure: retry once (jsDelivr throws transient 503s),
+            // then remove everything — never a broken image. A successful
+            // load resets the flag so a later failure gets its own retry.
             var imgRetried = false;
             imgEl.addEventListener('load', function() { imgRetried = false; });
             imgEl.onerror = function() {
                 var src = imgEl.getAttribute('src');
                 if (!imgRetried && src) {
                     imgRetried = true;
-                    imgEl.removeAttribute('src');   // drop the broken state (no request, no error)
-                    // Re-request after a beat — but only if nothing else has
-                    // since set a src (e.g. the user woke a mood mid-retry), so
-                    // the retry can't clobber a newer, good image.
+                    imgEl.removeAttribute('src');   // drop the broken state
+                    // Re-request after a beat — unless something newer has
+                    // set a src meanwhile (the retry must not clobber it).
                     setTimeout(function() {
                         if (!imgEl.getAttribute('src')) imgEl.src = src;
                     }, 800);
@@ -3269,10 +3182,8 @@
             var lang = function() {
                 return document.documentElement.getAttribute('data-lang') === 'en' ? 'en' : 'zh';
             };
-            // Follow the simplified/traditional toggle. Lines are stored in
-            // simplified; in Traditional mode convert them with the same OpenCC
-            // the theme already loads. (A bubble already on screen when the user
-            // toggles is converted by the theme's whole-body pass.)
+            // Lines are stored simplified; Traditional mode converts them
+            // with the OpenCC the theme already loads.
             var s2tConverter = null;
             var toVariant = function(text) {
                 if (document.documentElement.getAttribute('data-variant') === 'trad' && window.OpenCC) {
@@ -3284,11 +3195,9 @@
                 return text;
             };
 
-            // Generic flicker-free art swap, shared by the normal expressions
-            // and the edge-peek poses: preload, then assign. A monotonically
-            // increasing token guards against load races — if the visitor
-            // wakes the figure while a peek image is still in flight, the stale
-            // onload is ignored so it can't clobber the restored expression.
+            // Flicker-free art swap: preload, then assign. The increasing
+            // token discards stale onloads so an in-flight image can't
+            // clobber a newer expression.
             var loaded = { happy: true };
             var artToken = 0;
             var setArt = function(name, isPeek) {
@@ -3300,9 +3209,8 @@
                     loaded[name] = true;
                     if (token === artToken) imgEl.src = url;   // only the latest request wins
                 };
-                // A missing peek image must never tear down the whole mascot —
-                // fall back to the last expression instead. Normal expressions
-                // keep the existing failure handling (imgEl.onerror removes all).
+                // A missing peek image falls back to the last expression —
+                // it must never tear down the whole mascot.
                 if (isPeek) {
                     pre.onerror = function() {
                         if (token === artToken) setArt(currentMood, false);
@@ -3310,17 +3218,14 @@
                 }
                 pre.src = url;
             };
-            // Remember the last normal expression so we can return to it after
-            // a peek, and so a failed peek load has something to fall back to.
+            // Last normal expression — restored after a peek or failed load.
             var currentMood = 'happy';
             var setMood = function(mood) {
                 currentMood = mood;
                 setArt(mood, false);
             };
-            // Warm a side's peek pose so the first tuck is instant. Called
-            // lazily (only once a tuck is actually scheduled, see scheduleTuck)
-            // so dismissed visitors and desktop visitors who never tuck don't
-            // pay for art they'll never see. Fetched once per side.
+            // Warm a side's peek art so the first tuck is instant; fetched
+            // lazily, once per side, only when a tuck is scheduled.
             var peekWarmed = {};
             var warmPeek = function(side) {
                 var name = 'peek-' + side;
@@ -3335,8 +3240,7 @@
             var idleTimer = null;
             function resetIdle() {
                 if (idleTimer) clearTimeout(idleTimer);
-                // Randomised 1–2 min gap so the idle chatter feels natural,
-                // not like clockwork nagging.
+                // Random 1–2 min gap — natural, not clockwork.
                 idleTimer = setTimeout(function() { if (ambient()) sayMoods(IDLE_MOODS); }, 60000 + Math.random() * 60000);
             }
 
@@ -3377,10 +3281,9 @@
             var CLICK_MOODS = ['surprised', 'angry', 'shy', 'excited', 'happy', 'confused'];
             var IDLE_MOODS = ['sleepy', 'sad', 'confused', 'shy'];
 
-            // ── 16 playful lines per expression ────────────────────────
-            // The key is the /chibi filename. Tapping and idling draw from
-            // these pools (so there's lots of variety); the contextual
-            // moments further down have their own dedicated lines.
+            // 16 lines per expression; the key is the /chibi filename.
+            // Taps and idle chatter draw from these pools; contextual
+            // moments below have their own lines.
             var MOODS = {
                 happy: [
                     { zh: '今天份的我，准时上线陪你啦~', en: 'Today’s dose of me, clocking in to keep you company~' },
@@ -3528,9 +3431,8 @@
                 ]
             };
 
-            // ── Contextual lines ───────────────────────────────────────
-            // Each scenario carries a curated spread of expressions that fit
-            // its mood, picked at random for variety.
+            // Contextual lines — each scenario carries its own spread of
+            // fitting expressions.
             var GREET = {
                 morning: [
                     { mood: 'happy',   zh: '早呀！起这么早，了不起哦~',   en: 'Morning! Up already? Impressive~' },
@@ -3623,9 +3525,8 @@
                 { mood: 'surprised', zh: '诶，刚刚去哪儿啦？',         en: 'Huh, where’d you slip off to?' },
                 { mood: 'shy',       zh: '刚刚…有点想你了呢。',       en: 'Just now… I missed you a little.' }
             ];
-            // Per-label greetings — each label gets a spread of expressions;
-            // add your own, keyed by the label name. Labels without an entry
-            // fall back to LABEL_DEFAULT, so every label page is covered.
+            // Per-label greetings, keyed by label name; unknown labels
+            // fall back to LABEL_DEFAULT.
             var LABEL_LINES = {
                 '中文': [
                     { mood: 'happy',   zh: '中文专区~ 慢慢读，别噎着。',   en: 'The Chinese corner~ read slowly, don’t choke.' },
@@ -3666,11 +3567,10 @@
             // Interactions
             document.addEventListener('copy', function() { say(pick(COPY)); });
 
-            // Hover the figure to keep the current line up long enough to
-            // read; let it fade shortly after the pointer leaves.
+            // Hovering the figure holds the current line and peeks it out;
+            // it fades shortly after the pointer leaves.
             imgEl.addEventListener('mouseenter', function() {
                 if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
-                // Peek fully out while hovered, and don't tuck back until leave.
                 if (tucked) setArt(currentMood, false);   // restore the real face first
                 wrap.classList.remove('is-tucked');
                 tucked = false;
@@ -3689,17 +3589,15 @@
             var dragging = false, moved = false, sx = 0, sy = 0, baseLeft = 0, baseTop = 0;
             var snapSide = null, tucked = false, tuckTimer = null;
             var TUCK_DELAY = 7000;   // longer than any bubble hold, so it never tucks mid-line
-            // Flip the bubble below the figure when it's too near the top.
-            // top/centerX may be passed in (e.g. during a drag) to avoid a
-            // layout read; otherwise they're measured.
+            // Flip the bubble below near the top edge. top/centerX may be
+            // passed in (e.g. during a drag) to avoid a layout read.
             var updateBubbleSide = function(top, centerX) {
                 if (top === undefined) {
                     var r = wrap.getBoundingClientRect();
                     top = r.top; centerX = r.left + r.width / 2;
                 }
                 wrap.classList.toggle('bubble-below', top < 96);
-                // On the right portion of the screen, grow the popovers
-                // leftward so they aren't cut off by the edge.
+                // Popovers grow leftward on the right side of the screen.
                 wrap.classList.toggle('bubble-left', centerX > window.innerWidth * 0.6);
             };
             // After it's snapped to a side, tuck it half off-screen when idle.
@@ -3734,9 +3632,9 @@
                 wrap.style.top = t + 'px';
                 wrap.style.bottom = 'auto';
             };
-            // Looser clamp used WHILE dragging: lets the figure go mostly past an
-            // edge (keeping a 24px sliver on-screen) so it can be dragged off to
-            // hide. The strict clampPos still governs resting/snapped positions.
+            // Looser clamp WHILE dragging (24px sliver stays on-screen) so
+            // the figure can be dragged off to hide; clampPos still governs
+            // resting positions.
             var dragClamp = function(l, t) {
                 var w = wrap.offsetWidth || 140, h = wrap.offsetHeight || 200, edge = 24;
                 return {
@@ -3763,14 +3661,13 @@
                     }
                 } catch (e) {}
             };
-            // Timer for the snap transition, so a new gesture can cancel one
-            // still in flight.
+            // Snap-transition timer — a new gesture can cancel one in flight.
             var motionTimer = null;
             var cancelMotion = function() {
                 if (motionTimer) { clearTimeout(motionTimer); motionTimer = null; }
             };
-            // On release, snap to the nearest edge and remember the side. Short
-            // plain glide, no inertia — it stays on the side it was let go on.
+            // On release, snap to the nearest edge (plain glide, no inertia)
+            // and remember the side.
             var snapToEdge = function() {
                 cancelMotion();
                 var r = wrap.getBoundingClientRect();
@@ -3790,8 +3687,8 @@
                     scheduleTuck();
                 }, 360);
             };
-            // Drag the figure off an edge and let go → hide, parking the reopen
-            // handle where it left. The only hide-by-gesture.
+            // Drag off an edge and release → hide, parking the reopen handle
+            // where it left. The only hide-by-gesture.
             var dismissTo = function(side, y) {
                 cancelMotion();
                 snapSide = null; tucked = false;
@@ -3824,9 +3721,8 @@
             imgEl.style.cursor = 'grab';
             imgEl.addEventListener('pointerdown', function(e) {
                 dragging = true; moved = false;
-                // Grabbing cancels any snap/exit in flight: pin the figure where
-                // it visually is, then drop the transition so the drag tracks the
-                // pointer immediately (no jump to a target).
+                // Grabbing cancels any snap/exit in flight: pin the figure
+                // where it visually is so the drag tracks the pointer.
                 if (motionTimer || wrap.style.transition) {
                     cancelMotion();
                     var rp = wrap.getBoundingClientRect();
@@ -3846,8 +3742,8 @@
             imgEl.addEventListener('pointermove', function(e) {
                 if (!dragging) return;
                 var dx = e.clientX - sx, dy = e.clientY - sy;
-                // Only switch into drag mode once the pointer actually moves,
-                // so a plain tap never re-anchors the figure or hides the bubble.
+                // Enter drag mode only on real movement — a plain tap must
+                // never re-anchor the figure.
                 if (!moved && Math.abs(dx) + Math.abs(dy) > 4) {
                     moved = true;
                     untuck();                       // come fully out to be dragged
@@ -3861,8 +3757,7 @@
                 var offFrac = Math.max(-c.left / w2, (c.left + w2 - window.innerWidth) / w2,
                                        -c.top / h2, (c.top + h2 - window.innerHeight) / h2);
                 wrap.classList.toggle('mascot-will-hide', offFrac > 0.4);
-                // Flip bar/menu above↔below & left↔right live (pass the known
-                // position so it doesn't force a layout read each move).
+                // Flip bar/menu sides live; known position avoids layout reads.
                 updateBubbleSide(c.top, c.left + baseW() * mascotScale / 2);
             });
             var lastTap = 0, tapTimer = null;
@@ -3875,8 +3770,7 @@
                 if (moved) {
                     wrap.classList.remove('mascot-will-hide');
                     var rr = wrap.getBoundingClientRect();
-                    // Released with ~40%+ dragged past any edge → hide immediately,
-                    // handle parked where it left; otherwise snap to the edge.
+                    // ~40%+ past an edge on release → hide; else snap back.
                     var offFrac = Math.max(-rr.left / rr.width, (rr.right - window.innerWidth) / rr.width,
                                            -rr.top / rr.height, (rr.bottom - window.innerHeight) / rr.height);
                     if (offFrac > 0.4) {
@@ -3889,7 +3783,7 @@
                 }
                 // Tapping while tucked just peeks it out — no line.
                 if (tucked) { untuck(); return; }
-                // No movement — tell a single tap from a double tap.
+                // Distinguish single tap (line) from double tap (go home).
                 var now = Date.now();
                 if (now - lastTap < 320) {
                     lastTap = 0;
@@ -3949,10 +3843,8 @@
                     if (!halfShown && pct > 0.45 && pct < 0.9) { halfShown = true; if (ambient()) say(pick(HALF)); }
                     if (!endShown && pct > 0.97) { endShown = true; say(pick(END)); }
                     if (pct > 0.5) wentDeep = true;
-                    // Scrolled back near the top after having gone deep. Reset the
-                    // halfway/finished milestones so a second read re-triggers them,
-                    // and greet the scroll-back. The reset always runs; only the
-                    // greeting is rate-limited (30s) so it can't spam.
+                    // Back near the top after going deep: reset the milestones
+                    // for a second read; only the greeting is rate-limited.
                     if (wentDeep && st < window.innerHeight * 0.25) {
                         wentDeep = false;
                         halfShown = false;
@@ -3984,24 +3876,23 @@
                 }
             });
 
-            // Park the reopen handle on the edge the figure left from, at that
-            // height (clamped so the pill always stays fully on-screen).
+            // Park the reopen handle on the edge the figure left from,
+            // clamped fully on-screen.
             var REOPEN_KEY = 'mascotReopen';
             var placeReopen = function(side, y) {
                 var w = reopen.offsetWidth || 46, h = reopen.offsetHeight || 46;
                 reopen.classList.toggle('side-right', side === 'right');
-                // Always position via `left` (right edge = innerWidth - w) so the
-                // release snap can transition the left value on either side.
+                // Always position via `left` so the release snap can
+                // transition it on either side.
                 reopen.style.left = (side === 'right' ? (window.innerWidth - w) : 0) + 'px';
                 if (y == null) { reopen.style.top = ''; reopen.style.bottom = '16px'; return; }
                 reopen.style.top = Math.max(8, Math.min(window.innerHeight - h - 8, y - h / 2)) + 'px';
                 reopen.style.bottom = 'auto';
             };
             var dismissAnimTimer = null;
-            // Hide with a quick fade+shrink exit while the reopen handle slides in
-            // over it (reflow-committed, so the exit fires immediately). Pass
-            // side/y to park the handle where the figure left; omit them (menu
-            // Hide) to read its current spot. Remembered across visits.
+            // Quick fade+shrink exit while the reopen handle slides in. Pass
+            // side/y to park the handle; omit (menu Hide) to read the current
+            // spot. Remembered across visits.
             var hide = function(side, y) {
                 if (side === undefined) {
                     var r = wrap.getBoundingClientRect();
@@ -4033,9 +3924,7 @@
                 // Clear any in-flight exit-animation styles before re-showing.
                 wrap.style.transition = ''; wrap.style.transform = ''; wrap.style.opacity = '';
                 wrap.style.transformOrigin = '';
-                // Emerge right where the reopen handle sat — snapped to that edge
-                // at that height — so the figure appears to step out from beside
-                // the button, instead of jumping back to the default corner.
+                // Emerge where the reopen handle sat, not the default corner.
                 var pos = null;
                 try { pos = JSON.parse(localStorage.getItem(REOPEN_KEY)); } catch (e) {}
                 if (pos && pos.side) {
@@ -4056,9 +3945,8 @@
                 try { localStorage.removeItem(REOPEN_KEY); } catch (e) {}
                 if (snapSide) scheduleTuck();
             };
-            // The reopen handle is draggable too: slide it up/down along an
-            // edge (and across the midline to switch edges) to reposition it;
-            // its spot is remembered. A plain tap (or keyboard) still summons.
+            // The handle is draggable along/across the edges (remembered);
+            // a plain tap still summons.
             reopen.style.touchAction = 'none';
             var reDragging = false, reMoved = false, reSX = 0, reSY = 0,
                 reBaseLeft = 0, reBaseTop = 0, reSwallowClick = false;
@@ -4093,10 +3981,9 @@
                     var r = reopen.getBoundingClientRect();
                     var side = (r.left + r.width / 2) < window.innerWidth / 2 ? 'left' : 'right';
                     var y = r.top + r.height / 2;
-                    // FLIP: pin the released (disc) position with no transition and
-                    // force a reflow to commit it as the start frame, THEN turn the
-                    // snap transition on and set the edge target — so the snap
-                    // animation fires immediately on release, every time.
+                    // FLIP: commit the released position as the start frame
+                    // (reflow), then enable the transition and set the edge
+                    // target so the snap fires immediately, every time.
                     reopen.style.transition = 'none';
                     reopen.style.left = r.left + 'px';
                     reopen.style.top = r.top + 'px';
@@ -4134,9 +4021,8 @@
                 });
             };
             syncMenu();
-            // Size slider — preview with a GPU transform while dragging (the
-            // container box stays fixed, so the menu doesn't shift under the
-            // thumb), then commit the real width on release.
+            // Size slider — GPU-transform preview while dragging (the menu
+            // must not shift under the thumb); real width commits on release.
             var sizeSlider = menu.querySelector('.mascot-size');
             sizeSlider.value = mascotScale;
             var committedScale = mascotScale;
@@ -4159,11 +4045,9 @@
                 try { localStorage.setItem(SIZE_KEY, mascotScale); } catch (e) {}
             };
             sizeSlider.addEventListener('change', commitSize);
-            // Pop the menu out right beside the SETTINGS BAR: to the bar's right
-            // when it's on the left half of the screen, to its left when on the
-            // right half. Top-aligned with the bar and clamped so it never runs
-            // off-screen. The side class drives the slide-out animation; offsets
-            // are inline and wrap-relative.
+            // Pop the menu beside the gear on whichever side has room,
+            // top-aligned and viewport-clamped; the side class drives the
+            // slide-out animation.
             var positionMenu = function() {
                 var wr = wrap.getBoundingClientRect();
                 var gr = gear.getBoundingClientRect();   // the settings bar
@@ -4231,8 +4115,8 @@
             } else {
                 setTimeout(function() {
                     ensureLoaded(); wrap.classList.add('is-ready'); greet();
-                    // On phones, after the greeting, rest tucked at the left
-                    // edge so the figure never covers the article text.
+                    // On phones, rest tucked at the left edge so the figure
+                    // never covers the text.
                     if (window.innerWidth <= 600 && !snapSide) {
                         snapSide = 'left';
                         wrap.classList.add('tuck-left');
@@ -4242,9 +4126,8 @@
             }
         })();
 
-        // ── 404 mascot — random "lost" expression + playful line ───────
-        // The static markup ships a sensible default; this just freshens it
-        // so each visit feels a little alive.
+        // 404 mascot — randomise the expression + line each visit; the
+        // static markup already ships a sensible default.
         (function() {
             var el = document.getElementById('error-404');
             if (!el) return;
@@ -4301,12 +4184,9 @@
 
     <script type='text/javascript'>
       //<![CDATA[
-      // Bound on DOMContentLoaded, not load: the theme / language / variant
-      // toggles only need their (static) buttons in the DOM, so there's no
-      // reason to wait for every image and font to finish — waiting on `load`
-      // left the toggles dead for seconds on image-heavy articles. (The
-      // comment-form lifecycle further down still uses `load`, since it must
-      // wait for Blogger's own comment script.)
+      // DOMContentLoaded, not load: waiting on `load` left the toggles dead
+      // for seconds on image-heavy pages. (The comment-form lifecycle still
+      // uses `load` — it must wait for Blogger's own script.)
       document.addEventListener("DOMContentLoaded", () => {
         const root = document.documentElement;
 
@@ -4314,7 +4194,7 @@
         const yearEl = document.getElementById("current-year");
         if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-        // UI transition effect — cache targets once to avoid re-querying on every toggle
+        // Content fade for the lang/variant toggles; targets cached once.
         const fadeTargets = document.querySelectorAll('.site-header, nav.main-nav, #main-content, .site-footer, .top-actions');
         const triggerContentFade = callback => {
             fadeTargets.forEach(el => el.classList.add('content-fade-out'));
@@ -4324,9 +4204,7 @@
             }, 350);
         };
 
-        // Theme toggle logic. Body's own transition handles the color fade;
-        // buttons / tags / etc. pick up the variable change via their own
-        // transition rules.
+        // Theme toggle — CSS transitions handle the fade.
         const themeToggle = document.getElementById("theme-toggle");
         if (themeToggle) {
           themeToggle.addEventListener("click", () => {
@@ -4386,9 +4264,8 @@
           }
         };
 
-        // Expose for infinite scroll: convert a freshly-added subtree to the
-        // current variant. Only Traditional needs work (Simplified is the stored
-        // form); best-effort — skips silently if OpenCC isn't loaded yet.
+        // For infinite scroll: convert a fresh subtree to the current
+        // variant. Best-effort — skips if OpenCC isn't loaded yet.
         let s2tConv = null;
         window.__rinuanToVariant = subtree => {
           if (!subtree || root.getAttribute("data-variant") !== "trad" || !window.OpenCC) return;
@@ -4417,8 +4294,8 @@
       //<![CDATA[
       window.addEventListener("DOMContentLoaded", () => {
 
-        // ── Post-process pass — applied to initial page and reusable for
-        // newly loaded posts (infinite scroll). Operates on any root.
+        // Post-process pass — runs on the initial page and on posts
+        // appended by infinite scroll. Operates on any root.
         const isFullPostView = !!document.querySelector('.post-body.full-content');
 
         function adjustPostTypography(root) {
@@ -4434,8 +4311,7 @@
 
                 const isEnglish = tags.includes('english') || tags.includes('en');
                 if (isEnglish) {
-                    // Style writes are batched via cssText to avoid multiple
-                    // style invalidations per post
+                    // cssText batches the writes — one style invalidation.
                     body.style.cssText += 'line-height:1.7;text-align:left;hyphens:auto;-webkit-hyphens:auto;word-spacing:0.05em;';
                     body.setAttribute('lang', 'en');
                 } else {
@@ -4443,13 +4319,12 @@
                     body.setAttribute('lang', 'zh-Hans');
                 }
 
-                // Mirror the lang attribute onto the title so the CSS :lang()
-                // rule can pick the right word-break behaviour for CJK vs Latin
+                // Mirror lang onto the title for the CSS :lang() word-break.
                 const title = post.querySelector('.post-title');
                 if (title) title.setAttribute('lang', isEnglish ? 'en' : 'zh-Hans');
 
-                // Add native lazy-loading + async decoding to article images
-                // (Blogger doesn't emit these by default on user-uploaded images)
+                // Lazy-loading + async decoding for article images (Blogger
+                // doesn't emit these).
                 body.querySelectorAll('img').forEach((img, idx) => {
                     if (!img.hasAttribute('loading')) {
                         // First image on a single-post view is likely above the fold → eager
@@ -4462,10 +4337,8 @@
 
         adjustPostTypography(document);
 
-        // Static translation dictionary — the sole source of tag translations.
-        // No external translation API is called. Unknown tags fall through to
-        // their original text (Chinese stays Chinese, English stays English).
-        // To add a new tag, just append a pair here.
+        // Static tag-translation dictionary — no external API. Unknown tags
+        // fall through to their original text. Add new tags here.
         const navDictionary = {
             // Navigation
             "Home": { zh: "首页", en: "Home" },
@@ -4538,17 +4411,13 @@
             "随想": { zh: "随想", en: "Reflections" }
         };
 
-        // Look up a tag in the dictionary. Unknown tags fall through to their
-        // original text — Chinese tags keep Chinese in both modes, English
-        // tags keep English in both modes. This is intentional: a broken
-        // translation is worse than no translation.
+        // Unknown tags keep their original text in both modes — a broken
+        // translation is worse than none.
         function getTranslations(rawTag) {
             return navDictionary[rawTag] || { zh: rawTag, en: rawTag };
         }
 
-        // Apply translations to tags within `root`. Synchronous — no network,
-        // no localStorage, resolves immediately. Safe to call repeatedly
-        // (idempotent: writing the same translation twice is a no-op).
+        // Translate tags within `root`. Synchronous and idempotent.
         function translateTagsIn(root) {
             root.querySelectorAll('.translatable-tag').forEach(link => {
                 const rawTag = link.getAttribute('data-raw-tag');
@@ -4563,25 +4432,19 @@
 
         translateTagsIn(document);
 
-        // Expose a combined post-processor for the infinite-scroll IIFE.
-        // It wraps both passes (typography + tag translation) so newly
-        // appended posts get the same treatment as the initial page.
+        // Combined post-processor for the infinite-scroll IIFE — appended
+        // posts get the same treatment as the initial page.
         window.__rinuanPostProcess = function(root) {
             adjustPostTypography(root);
             translateTagsIn(root);
         };
 
-        // ── Infinite scroll ────────────────────────────────────────────────
-        // Multi-post views only (home / label / archive / search). Fetches the
-        // server's own next ("older") page and appends its posts — page 2+
-        // render the correct count even though Blogger's buggy first page may
-        // show a single post, so this fills the list AND keeps markup identical.
-        // Replaces the classic pager; dedupes against posts already shown.
+        // ── Infinite scroll — multi-post views only. Fetches the server's
+        // own "older" page and appends its posts (markup stays identical);
+        // replaces the classic pager and dedupes.
         (function() {
-            // Skip single posts / static pages: they also render a .blog-pager
-            // (prev/next-POST nav), so without this guard we'd append other
-            // posts' full bodies into the article. Only multi-post lists (which
-            // show snippets, never a full-content body) should paginate.
+            // Guard: single posts also render a .blog-pager (prev/next POST)
+            // — paginating there would append other posts into the article.
             if (document.querySelector('.post-body.full-content')) return;
             const list = document.querySelector('.blog-posts');
             const pager = document.querySelector('.blog-pager');
@@ -4654,32 +4517,23 @@
     <b:if cond='data:view.isSingleItem'>
       <script type='text/javascript'>
         //<![CDATA[
-        // ====================================================================
-        // Comment module — encapsulated IIFE.
-        // Handles every aspect of the customized Blogger comment experience:
-        //   1. i18n strings for buttons (CN-simp / CN-trad / EN)
-        //   2. Form lifecycle: lazy iframe init, expand/collapse, reply mode
-        //   3. DOM restructuring: hi-res avatars, localized delete buttons,
-        //      reply folding (YouTube-style), tree branch visuals
-        //   4. Bootstrap: MutationObserver wiring
-        // All scoped here. Nothing leaks to global scope.
-        // ====================================================================
+        // Comment module — the whole customised Blogger comment experience:
+        // 1. i18n button strings  2. form lifecycle (lazy iframe, expand/
+        // collapse, reply mode)  3. DOM restructuring (hi-res avatars,
+        // reply folding, branch visuals)  4. MutationObserver bootstrap.
         (function() {
             'use strict';
 
-            // ── 1. i18n strings ──────────────────────────────────────────────
+            // ── 1. i18n strings
             const TEXT_REPLY    = '<span class="lang-zh"><span class="variant-simp">回复</span><span class="variant-trad">回覆</span></span><span class="lang-en">Reply</span>';
             const TEXT_CANCEL   = '<span class="lang-zh"><span class="variant-simp">取消回复</span><span class="variant-trad">取消回覆</span></span><span class="lang-en">Cancel</span>';
             const TEXT_WRITE    = '<span class="lang-zh"><span class="variant-simp">写留言</span><span class="variant-trad">寫留言</span></span><span class="lang-en">Write a comment</span>';
             const TEXT_COLLAPSE = '<span class="lang-zh"><span class="variant-simp">收起留言框</span><span class="variant-trad">收起留言框</span></span><span class="lang-en">Collapse comment box</span>';
             const TEXT_DELETE   = '<span class="lang-zh"><span class="variant-simp">删除</span><span class="variant-trad">刪除</span></span><span class="lang-en">Delete</span>';
 
-            // ── 2. Form lifecycle ────────────────────────────────────────────
-            // Encapsulates the Blogger comment iframe in our own .form-inner
-            // wrapper so we can apply RTL trick + color filters. Single iframe
-            // is reused for both the top-level form and inline reply forms,
-            // moved around via DOM relocation.
-
+            // ── 2. Form lifecycle — wraps Blogger's comment iframe in
+            // .form-inner (RTL trick + colour filters). One iframe serves
+            // both the top-level form and inline replies, via relocation.
             function initFormLifecycle() {
                 const commentToggleBtn = document.getElementById("comment-toggle");
                 const commentsWrapper = document.querySelector(".comments-wrapper");
@@ -4701,9 +4555,8 @@
                     return true;
                 }
 
-                // Try immediate init; otherwise watch DOM for iframe arrival.
-                // 8s safety timeout disconnects observer if iframe never shows
-                // (e.g. comments disabled on this post).
+                // Init now, or watch for the iframe's arrival; 8s timeout
+                // covers posts with comments disabled.
                 if (!initializeCommentIframe()) {
                     const iframeObserver = new MutationObserver(() => {
                         if (initializeCommentIframe()) iframeObserver.disconnect();
@@ -4730,13 +4583,9 @@
                             commentToggleBtn.innerHTML = TEXT_WRITE;
                             customFormContainer.classList.remove("is-expanded");
                         } else {
-                            // Returning from a reply context to the main form.
-                            // The container may currently sit under some
-                            // comment's .item-control AND still be expanded.
-                            // Teleporting it back to the top would skip the
-                            // collapse animation entirely. So: collapse first,
-                            // relocate when the collapse settles, then expand
-                            // in the new position to play the open animation.
+                            // Returning from reply mode: teleporting the form
+                            // would skip the collapse animation, so collapse
+                            // first, relocate when settled, then expand.
                             const mainComments = document.getElementById("comments");
                             const formInner = customFormContainer.querySelector('.form-inner');
                             const srcLink = document.getElementById("comment-editor-src");
@@ -4761,15 +4610,10 @@
                             };
 
                             if (wasExpanded && !alreadyAtTop) {
-                                // Phase 1: collapse where it currently sits.
                                 customFormContainer.classList.remove("is-expanded");
-                                // Phase 2: wait for collapse to finish, then
-                                // relocate + re-expand. 320ms matches the
-                                // 0.3s grid-template-rows transition + tiny
-                                // safety buffer. transitionend would be more
-                                // precise but fires for every transitioned
-                                // property (grid-rows AND opacity AND margin),
-                                // adding event-cleanup complexity for no gain.
+                                // 320ms = the 0.3s grid-rows transition +
+                                // buffer (transitionend fires per property —
+                                // more cleanup for no gain).
                                 setTimeout(relocateAndExpand, 320);
                             } else {
                                 relocateAndExpand();
@@ -4778,10 +4622,8 @@
                     });
                 }
 
-                // Inline reply button delegation. Clicking a reply button on
-                // an existing comment relocates the shared iframe under that
-                // comment, switching the form into "reply mode". Clicking
-                // again (now showing "Cancel") returns the form to the top.
+                // Reply-button delegation: relocate the shared iframe under
+                // the clicked comment; clicking Cancel returns it to the top.
                 document.body.addEventListener("click", e => {
                     const replyBtn = e.target.closest(".comment-reply");
                     if (!replyBtn) return;
@@ -4820,14 +4662,9 @@
                             commentsWrapper.classList.add("show-main-form");
                             if (commentToggleBtn) commentToggleBtn.innerHTML = TEXT_COLLAPSE;
                         } else {
-                            // Start reply → move form directly under this
-                            // comment's action row (.item-control). Using
-                            // insertAdjacentElement('afterend', ...) keeps
-                            // the form as a sibling of the actions, NOT a
-                            // descendant of .comment — important because
-                            // .comment may contain nested replies, and
-                            // appending to .comment would push the form
-                            // below those replies.
+                            // Start reply → move the form right under this
+                            // comment's action row, as a SIBLING (appending
+                            // into .comment would land below nested replies).
                             replyBtn.classList.add("cancel-active");
                             replyBtn.innerHTML = TEXT_CANCEL;
                             commentsWrapper.classList.remove("show-main-form");
@@ -4840,11 +4677,8 @@
                             }
                         }
 
-                        // Two-stage restoration (matches the original behavior):
-                        // First un-hide the container so its expand animation
-                        // can play; only fade the iframe back in once the
-                        // container has settled, otherwise the iframe blinks
-                        // visible inside a still-collapsing container.
+                        // Two-stage restore: expand the container first, fade
+                        // the iframe in only once it has settled (no blink).
                         if (customFormContainer) {
                             void customFormContainer.offsetWidth;  // force reflow
                             customFormContainer.style.transition = '';
@@ -4860,11 +4694,8 @@
                 });
             }
 
-            // ── 3. Comment restructuring (DOM observer) ──────────────────────
-            // Blogger's threadedComments injects comment markup asynchronously
-            // and unpredictably. We watch the comment container for mutations
-            // and run idempotent restructuring passes whenever it changes.
-
+            // ── 3. Comment restructuring — Blogger injects comment markup
+            // asynchronously, so idempotent passes run on every mutation.
             let restructureTimer;
 
             function restructureComments() {
@@ -4904,8 +4735,7 @@
                     }
                 });
 
-                // YouTube-style reply folding. Wrap reply list in a grid that
-                // animates open/closed via grid-template-rows transition.
+                // YouTube-style reply folding via a grid-rows transition.
                 document.querySelectorAll(".comment-replies:not([data-folded])").forEach(thread => {
                     const ol = thread.querySelector("ol");
                     const nestedComments = thread.querySelectorAll(".comment");
@@ -4920,8 +4750,7 @@
                         parentComment.insertBefore(trunk, parentComment.firstChild);
                     }
 
-                    // Wrap the OL in a 2-level container so we can animate
-                    // grid-template-rows: 0fr ↔ 1fr smoothly
+                    // 2-level wrapper animates grid-template-rows 0fr ↔ 1fr.
                     const wrapper = document.createElement("div");
                     wrapper.className = "replies-grid-wrapper";
                     const inner = document.createElement("div");
@@ -4986,12 +4815,8 @@
                 }
             }
 
-            // ── 4. Bootstrap ─────────────────────────────────────────────────
-            // Debounce coalesces Blogger's burst of micro-mutations (it fires
-            // dozens of childList events when injecting or re-rendering a
-            // comment thread). 16ms = one frame — short enough to never be
-            // perceived as a flash, long enough to batch a single user
-            // action's worth of mutations into one restructure pass.
+            // ── 4. Bootstrap — 16ms (one frame) debounce batches Blogger's
+            // burst of micro-mutations into one restructure pass.
             const commentObserver = new MutationObserver(() => {
                 clearTimeout(restructureTimer);
                 restructureTimer = setTimeout(restructureComments, 16);
