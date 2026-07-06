@@ -54,31 +54,49 @@
     <!-- Only the weights actually used: Dancing Script 500 (tagline),
          EB Garamond 400/500 + italic 400, Inter 400/600. Inter 300 and
          Dancing Script 600 were never referenced by any rule. -->
-    <link as='style' href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@400;600&amp;display=optional' onload='this.onload=null;this.rel=&quot;stylesheet&quot;' rel='preload'/>
+    <link as='style' href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@400;600&amp;display=swap' onload='this.onload=null;this.rel=&quot;stylesheet&quot;' rel='preload'/>
     <noscript>
-      <link href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@400;600&amp;display=optional' rel='stylesheet'/>
+      <link href='https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Inter:wght@400;600&amp;display=swap' rel='stylesheet'/>
     </noscript>
 
     <script type='text/javascript'>
       //<![CDATA[
-      // Initialize user preferences
+      // Initialize user preferences. localStorage can THROW when storage is
+      // blocked — the attributes must still land or every bilingual span
+      // renders twice, so the whole read/write path is guarded.
       !function() {
         var root = document.documentElement;
-        var theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        var lang = localStorage.getItem("lang");
-        var variant = localStorage.getItem("variant");
+        var theme, lang, variant;
+        try {
+          theme = localStorage.getItem("theme");
+          lang = localStorage.getItem("lang");
+          variant = localStorage.getItem("variant");
+        } catch (e) {}
+        if (!theme) theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
         if (!lang) {
-          var userLang = (navigator.language || navigator.userLanguage).toLowerCase();
+          var userLang = (navigator.language || "").toLowerCase();
           lang = userLang.includes("zh") ? "zh" : "en";
           variant = userLang.match(/(tw|hk|mo|hant)/) ? "trad" : "simp";
-          localStorage.setItem("lang", lang);
-          localStorage.setItem("variant", variant);
+          try {
+            localStorage.setItem("lang", lang);
+            localStorage.setItem("variant", variant);
+          } catch (e) {}
         }
 
         root.setAttribute("data-theme", theme);
         root.setAttribute("data-lang", lang);
         root.setAttribute("data-variant", variant || "simp");
+
+        // Mirror the resolved prefs onto browser-facing UI before first
+        // paint: <html lang> for screen readers (Blogger only sets the blog
+        // locale), and the theme-color metas — they're keyed to the OS
+        // scheme, which a stored in-page theme may disagree with.
+        root.lang = lang === "zh" ? ((variant || "simp") === "trad" ? "zh-Hant" : "zh-Hans") : "en";
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        for (var i = 0; i < metas.length; i++) {
+          metas[i].setAttribute("content", theme === "dark" ? "#1a1915" : "#faf9f4");
+        }
       }();
       //]]>
     </script>
@@ -109,22 +127,43 @@
            --glass-edge fakes a soft rim in place of a border. */
         --glass-bg: linear-gradient(180deg, rgba(252, 250, 244, 0.46), rgba(249, 247, 239, 0.30));
         --glass-panel: linear-gradient(180deg, rgba(253, 251, 246, 0.62), rgba(250, 248, 241, 0.52));
+        /* Dense solid-colour glass (pairs with --glass-blur). Deliberately
+           more opaque than --glass-bg: the blurred backdrop repaints a
+           beat behind theme-fade colour changes, and what shows through
+           is exactly what reads as the surface changing colour late. */
+        --glass-fill: rgba(252, 250, 245, 0.88);
         /* Wide blur + saturation so the glass clearly reads as glass;
            every frosted surface shares these variables. */
         --glass-blur: blur(22px) saturate(185%);
-        --glass-fill: rgba(252, 250, 245, 0.62);
         --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.34);
         --glass-drop: 0 5px 16px rgba(40, 36, 28, 0.10);
         --glass-drop-pop: 0 14px 32px rgba(40, 36, 28, 0.16);
         /* Sage hover wash as an inset shadow layer — gradients can't be
            transitioned, inset shadows can. */
         --glass-tint: color-mix(in srgb, var(--accent-color) 18%, transparent);
+        /* Reopen handle: solid glass-colour base prevents backdrop repaint
+           lag on theme toggle; sheen/edge/blur carry the glass material. */
+        --reopen-bg: #ede9df;
+        --reopen-bg-hover: #e8e3d7;
+        --reopen-sheen: linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.20) 45%, rgba(85, 112, 62, 0.08));
+        --reopen-edge: inset 0 1px 0 rgba(255, 255, 255, 0.82), inset 0 -1px 0 rgba(80, 68, 44, 0.08), inset 0 0 0 1px rgba(98, 88, 62, 0.12);
+        --reopen-shadow-left: 2px 3px 10px rgba(40, 36, 28, 0.13), 0 8px 18px rgba(40, 36, 28, 0.06);
+        --reopen-shadow-left-pop: 3px 4px 12px rgba(40, 36, 28, 0.16), 0 10px 22px rgba(40, 36, 28, 0.08);
+        --reopen-shadow-right: -2px 3px 10px rgba(40, 36, 28, 0.13), 0 8px 18px rgba(40, 36, 28, 0.06);
+        --reopen-shadow-right-pop: -3px 4px 12px rgba(40, 36, 28, 0.16), 0 10px 22px rgba(40, 36, 28, 0.08);
+        --reopen-shadow-free: 0 4px 12px rgba(40, 36, 28, 0.13), 0 10px 22px rgba(40, 36, 28, 0.07);
         /* Motion system. --ease: reversible colour changes. --ease-out:
            entrances/travel. --ease-spring: hover/press transforms ONLY —
            it visibly bounces on opacity/width/collapse. */
         --ease: cubic-bezier(0.4, 0, 0.2, 1);
         --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
         --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        /* Shared section break — a single hairline that fades out at both
+           ends; used between list cards, for in-article <hr>, and as the
+           end-of-list mark. Resolves through the themed vars above. */
+        --section-break: linear-gradient(90deg,
+          transparent, var(--border-color) 30%,
+          var(--border-color) 70%, transparent);
       }
 
       /* Dark theme — warm charcoal (not cool grey) to match Anthropic's
@@ -144,11 +183,23 @@
            hard frame on dark) — just a faint top sheen. */
         --glass-bg: linear-gradient(180deg, rgba(58, 57, 53, 0.34), rgba(48, 47, 43, 0.28));
         --glass-panel: linear-gradient(180deg, rgba(52, 51, 47, 0.58), rgba(44, 43, 40, 0.50));
-        --glass-fill: rgba(52, 51, 47, 0.56);
-        --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        --glass-fill: rgba(52, 51, 47, 0.86);
+        /* Second (near-invisible) layer keeps the shadow-list length equal
+           to the light theme's, so box-shadow interpolates across the theme
+           toggle instead of jumping discretely. */
+        --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
         --glass-drop: 0 8px 30px rgba(0, 0, 0, 0.40);
         --glass-drop-pop: 0 20px 50px rgba(0, 0, 0, 0.50);
         --glass-tint: color-mix(in srgb, var(--accent-color) 24%, transparent);
+        --reopen-bg: #2c2b26;
+        --reopen-bg-hover: #333128;
+        --reopen-sheen: linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035) 46%, rgba(166, 193, 135, 0.06));
+        --reopen-edge: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 -1px 0 rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+        --reopen-shadow-left: 2px 3px 11px rgba(0, 0, 0, 0.36), 0 8px 20px rgba(0, 0, 0, 0.22);
+        --reopen-shadow-left-pop: 3px 4px 14px rgba(0, 0, 0, 0.44), 0 10px 24px rgba(0, 0, 0, 0.26);
+        --reopen-shadow-right: -2px 3px 11px rgba(0, 0, 0, 0.36), 0 8px 20px rgba(0, 0, 0, 0.22);
+        --reopen-shadow-right-pop: -3px 4px 14px rgba(0, 0, 0, 0.44), 0 10px 24px rgba(0, 0, 0, 0.26);
+        --reopen-shadow-free: 0 4px 14px rgba(0, 0, 0, 0.38), 0 10px 24px rgba(0, 0, 0, 0.24);
       }
 
       /* No backdrop-filter (older engines): translucent glass would be
@@ -183,9 +234,8 @@
       }
 
       /* Metric-matched fallback faces (capsize-derived size-adjust +
-         ascent/descent overrides) so the pre-swap paint matches the web
-         font. Extra locals cover Android/Linux. font-display: optional in
-         the font URL is what fully prevents CLS. */
+         ascent/descent overrides) so the pre-swap paint stays close to the
+         web font. Extra locals cover Android/Linux. */
       @font-face {
         font-family: 'Inter Fallback';
         src: local('Arial'), local('Roboto'), local('Helvetica Neue'), local('Liberation Sans');
@@ -286,16 +336,12 @@
       .skip-link:focus { top: 12px; outline: none; }
       #main-content:focus { outline: none; }
 
-      /* Fade the themed hairlines + post dividers on theme toggle instead
-         of letting them snap. */
+      /* Fade the themed hairline borders on theme toggle instead of
+         letting them snap. */
       .related-posts,
-      .comments-wrapper,
       .related-posts li,
       .site-footer {
         transition: border-color 0.3s var(--ease);
-      }
-      .post-outer + .post-outer::before {
-        transition: background-color 0.3s var(--ease);
       }
 
       /* Buttons */
@@ -334,15 +380,6 @@
         font-weight: 600;
       }
 
-      .comment-toggle-btn {
-        padding: 10px 24px;
-        min-height: 48px;
-        width: 100%;
-        max-width: 350px;
-        display: flex;
-        margin: 0 auto 20px auto;
-      }
-
       /* Read More + pager reuse the quiet nav-tab look at its compact size. */
       .read-more,
       .blog-pager a {
@@ -377,6 +414,12 @@
       /* Primary action — the one sage-tinted pill per article
          ("Write a comment"); everything else stays quiet. */
       .comment-toggle-btn {
+        display: flex;
+        width: 100%;
+        max-width: 350px;
+        margin: 0 auto 20px;
+        padding: 10px 24px;
+        min-height: 48px;
         background: var(--accent-bg);
         color: var(--accent-color);
         border-color: transparent;
@@ -453,6 +496,28 @@
         @view-transition {
           navigation: auto;
         }
+      }
+
+      /* First-paint entrance — masthead, nav tabs and (on single posts)
+         title → meta → body rise in one staggered pass. Two constraints:
+         targets must be CHILDREN of the .content-fade-out targets (a filled
+         animation on the same element would fight the toggle fade), and
+         fill-mode stays `backwards` (a forwards fill would permanently
+         override hover transform transitions on the same element). */
+      @media (prefers-reduced-motion: no-preference) {
+        .site-header .header-title,
+        .main-nav ul,
+        .top-actions .action-btn,
+        .post-outer:has(.post-body.full-content) h2.post-title,
+        .post-outer:has(.post-body.full-content) .post-meta,
+        .post-outer:has(.post-body.full-content) .post-body.full-content {
+          animation: card-rise 0.6s var(--ease-out) backwards;
+        }
+        .main-nav ul             { animation-delay: 0.07s; }
+        .top-actions .action-btn { animation-delay: 0.12s; }
+        .post-outer:has(.post-body.full-content) h2.post-title { animation-delay: 0.05s; }
+        .post-outer:has(.post-body.full-content) .post-meta    { animation-delay: 0.12s; }
+        .post-outer:has(.post-body.full-content) .post-body.full-content { animation-delay: 0.18s; }
       }
 
       /* Toggles */
@@ -592,7 +657,8 @@
 
       .header-desc {
         /* Cursive tagline; script faces already slant, so no italic. */
-        font-family: 'Dancing Script', cursive;
+        font-family: 'Dancing Script', 'Snell Roundhand', 'Bradley Hand',
+                     'Segoe Script', 'Comic Sans MS', cursive;
         font-size: 1.3rem;
         font-weight: 500;
         line-height: 1.4;
@@ -665,6 +731,19 @@
         contain-intrinsic-size: auto;
       }
 
+      /* List cards read as an editorial index: flex column so the date
+         eyebrow (source order: after the title) can move above it. Flex
+         margins don't collapse, so the read-more pill drops its top margin
+         and must not stretch to the full card width. */
+      .post-outer:has(.post-body.snippet-content) {
+        display: flex;
+        flex-direction: column;
+      }
+      .post-outer:has(.post-body.snippet-content) .read-more {
+        margin-top: 0;
+        align-self: flex-start;
+      }
+
       /* Scroll-linked card entrance, list pages only (:has keeps it off
          the single-post view). Progressive enhancement — browsers without
          animation-timeline ignore it. Linear timing: the scroll position
@@ -685,15 +764,18 @@
         }
       }
 
-      /* Subtle divider between posts on list pages */
+      /* Divider between posts — the shared section-break motif. */
       .post-outer + .post-outer::before {
         content: '';
         display: block;
-        width: 40px;
+        width: 150px;
         height: 1px;
-        background: var(--border-color);
+        background: var(--section-break);
         margin: 0 auto 60px;
-        opacity: 0.7;
+        /* The ::before is a flex item too; without this it (order 0) slots
+           BELOW the order:-1 date eyebrow, gluing the eyebrow to the bottom
+           of the previous card ("two dates" bug). */
+        order: -2;
       }
 
       /* Infinite-scroll UI: invisible sentinel + status row (pulsing dot
@@ -735,12 +817,14 @@
       @media (prefers-reduced-motion: reduce) {
         .infinite-status .loading-dot { animation: none; opacity: 0.7; }
       }
-      /* End-of-list: three centered dots, same dingbat as hr */
+      /* End-of-list: the shared section-break motif. font-size 0 hides the
+         '···' text the loader injects (kept for AT/no-CSS contexts). */
       .infinite-status .end-dingbat {
-        color: var(--meta-color);
-        letter-spacing: 0.8em;
-        font-size: 0.85rem;
-        padding-left: 0.8em;
+        display: block;
+        width: 150px;
+        height: 1px;
+        font-size: 0;
+        background: var(--section-break);
       }
       /* Error: text + retry button stacked */
       .infinite-status .retry-btn {
@@ -824,6 +908,30 @@
         transition: color 0.3s var(--ease);
       }
 
+      /* List-card eyebrow — CATEGORY · DATE above the title, news-index
+         style. display:block + fixed height reserve the row before the JS
+         fill, so the late text can't shift the card (CLS); `order` lifts it
+         above the title inside the flex card (non-:has browsers keep it
+         below the title — graceful). */
+      time.card-date {
+        display: block;
+        order: -1;
+        height: 1.4em;
+        margin: 0 0 14px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--meta-color);
+        font-feature-settings: "onum" 1, "liga" 1;
+        /* The reserved 1.4em height would CLIP a wrapped second line —
+           overlong eyebrows ellipsize instead. */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.3s var(--ease);
+      }
+
       .post-body.full-content {
         font-size: 1.15rem;
         word-break: break-word;
@@ -895,31 +1003,47 @@
         filter: brightness(1);
       }
 
+      /* Article images surface as they enter the viewport. translate +
+         opacity only: no layout shift, and the hover `transform` zoom is a
+         different property. Images already past their entry range at load
+         (e.g. the eager lead image) render settled. */
+      @keyframes img-surface {
+        from { opacity: 0; translate: 0 22px; }
+        to   { opacity: 1; translate: 0 0; }
+      }
+      @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+          .post-body.full-content img {
+            animation-name: img-surface;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: view();
+            animation-range: entry 0% entry 40%;
+          }
+        }
+      }
+
       .separator {
         border: none !important;
         background: transparent !important;
       }
 
-      /* Section break as three centered dots; the hr stays semantic. */
+      /* Section break inside articles — the shared motif; the hr stays
+         semantic. */
       .post-body hr {
         border: none;
         background: none;
         margin: 2.5em auto;
         height: auto;
-        text-align: center;
         overflow: visible;
       }
       .post-body hr::before {
-        /* 6-digit escapes for U+00B7 keep Blogger's XML serializer from
-           re-encoding the literal character; spacing is via letter-spacing. */
-        content: '\0000B7\0000B7\0000B7';
+        content: '';
         display: block;
-        color: var(--meta-color);
-        letter-spacing: 0.8em;
-        font-size: 0.85em;
-        line-height: 1;
-        /* Offsets the trailing letter-spacing to optically center the dots. */
-        padding-left: 0.8em;
+        width: 150px;
+        height: 1px;
+        margin: 0 auto;
+        background: var(--section-break);
       }
 
       /* ── Rich article content — Blogger emits headings/quotes/lists/code/
@@ -934,15 +1058,20 @@
         font-weight: 500;
         line-height: 1.35;
         color: var(--text-color);
+        /* Headings escape the body's CJK justify: justified + balanced
+           multi-line headings stretch huge gaps into the first line on
+           narrow screens. */
+        text-align: left;
         /* Editorial rhythm: more air above than below — a heading belongs
            to the text that follows it. h2/h3 widen the top gap below. */
         margin: 1.8em 0 0.5em;
         letter-spacing: -0.2px;
         /* Anchor jumps shouldn't pin the heading to the viewport edge. */
         scroll-margin-top: 2.5rem;
-        /* Old-style figures; balanced wrap for multi-line subheads. */
+        /* Old-style figures. NO text-wrap:balance here — it splits a
+           two-line CJK heading evenly, breaking mid-phrase where a natural
+           full first line reads correctly. */
         font-feature-settings: "onum" 1, "liga" 1;
-        text-wrap: balance;
       }
       .post-body.full-content h2 { font-size: 1.6rem; margin-top: 2.2em; }
       .post-body.full-content h3 { font-size: 1.35rem; margin-top: 2em; }
@@ -1063,10 +1192,6 @@
         border-radius: 4px;
       }
 
-      /* Footnote markers must not open gaps between lines. */
-      .post-body.full-content sup,
-      .post-body.full-content sub { line-height: 1; }
-
       /* Comfortable paragraph rhythm — explicit spacing so prose breathes
          evenly regardless of how Blogger emits the markup. */
       /* text-wrap: pretty evens out line lengths and kills orphans/rivers
@@ -1121,6 +1246,55 @@
         filter: brightness(1);
       }
 
+      /* Cover parallax — the image drifts inside its clipped frame as the
+         card scrolls by (the scroll position IS the easing). The static
+         `scale` gives the drift headroom; `scale`/`translate` are separate
+         properties, so the hover `transform` zoom still composes. */
+      @keyframes cover-drift {
+        from { translate: 0 -4%; }
+        to   { translate: 0 4%; }
+      }
+      @supports (animation-timeline: view()) {
+        @media (prefers-reduced-motion: no-preference) {
+          .featured-img-wrapper img {
+            scale: 1.11;
+            animation-name: cover-drift;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: view();
+            animation-range: cover 0% cover 100%;
+          }
+        }
+      }
+
+      /* Listing masthead — label/search/archive pages open with a small
+         uppercase kicker + serif headline (editorial section head). Built
+         from the URL by a synchronous DOMContentLoaded pass, so it paints
+         with the page; homepage and single posts never get one. */
+      .listing-header {
+        margin: 4px 0 55px;
+      }
+      .listing-kicker {
+        margin: 0 0 10px;
+        font-size: 0.78rem;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--meta-color);
+        transition: color 0.3s var(--ease);
+      }
+      .listing-title {
+        margin: 0;
+        font-family: 'EB Garamond', 'EB Garamond Fallback', serif;
+        font-weight: 500;
+        font-size: clamp(2.1rem, 1.9rem + 0.6vw, 2.5rem);
+        line-height: 1.3;
+        letter-spacing: -0.3px;
+        /* Natural wrap, no balance — it mid-breaks CJK (long search
+           queries), same trap as the article headings. */
+        overflow-wrap: anywhere;
+      }
+
       /* Pagination */
       .blog-pager {
         padding: 10px 0;
@@ -1137,7 +1311,17 @@
       .comments-wrapper {
         margin-top: 30px;
         padding-top: 20px;
-        border-top: 1px solid var(--border-color);
+      }
+      /* Related/comments sections open with the shared section break instead
+         of a full-width hairline. */
+      .related-posts::before,
+      .comments-wrapper::before {
+        content: '';
+        display: block;
+        width: 150px;
+        height: 1px;
+        margin: 10px auto 40px;
+        background: var(--section-break);
       }
 
       .related-posts h3,
@@ -1157,6 +1341,9 @@
       }
       .related-posts li { border-top: 1px solid var(--border-color); }
       .related-posts li:first-child { border-top: none; }
+      /* Close the list — the last row gets a bottom rule so the section
+         doesn't trail off unfinished. */
+      .related-posts li:last-child { border-bottom: 1px solid var(--border-color); }
       .related-posts li a {
         display: block;
         position: relative;
@@ -1401,8 +1588,6 @@
       .comment-replies ul,
       .comment-thread ol,
       .comment-thread ul {
-        margin-left: 0 !important;
-        padding-left: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
         list-style: none !important;
@@ -1597,6 +1782,10 @@
           line-height: 1.4;
         }
 
+        .listing-header { margin-bottom: 40px; }
+        .listing-title { font-size: 1.55rem; }
+        time.card-date { font-size: 0.7rem; }
+
         .post-outer {
           margin-bottom: 50px;
         }
@@ -1610,9 +1799,18 @@
           margin-bottom: 16px;
         }
 
-        /* Wide tables scroll sideways instead of stretching the page. */
+        /* Wide tables scroll sideways instead of stretching the page.
+           fit-content + auto margins: a display:block table wraps its rows
+           in a shrink-to-fit anonymous table that hugs the LEFT edge —
+           narrow tables (e.g. in-post chapter nav) must stay centered.
+           !important: author tables carry inline width:100% (beaten only
+           by an important author declaration). */
         .post-body.full-content table {
           display: block;
+          width: fit-content !important;
+          max-width: 100% !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
           overflow-x: auto;
           scrollbar-width: thin;
           scrollbar-color: var(--border-color) transparent;
@@ -2021,7 +2219,8 @@
         /* Full pill — same radius as the nav-bar tab buttons. */
         border-radius: 30px;
         cursor: pointer;
-        box-shadow: var(--glass-drop), var(--glass-edge), inset 0 0 0 100px transparent;
+        box-shadow: var(--glass-edge), 3px 4px 12px rgba(40, 36, 28, 0.12),
+                    inset 0 0 0 100px transparent;
         z-index: 2;
         /* Hidden by default — revealed when the pointer is near the figure. */
         opacity: 0;
@@ -2196,20 +2395,26 @@
         justify-content: center;
         border-radius: 0 50% 50% 0;
         overflow: hidden;
-        background: var(--glass-bg);
+        background-color: var(--reopen-bg);
+        background-image: var(--reopen-sheen);
         -webkit-backdrop-filter: var(--glass-blur);
         backdrop-filter: var(--glass-blur);
-        color: var(--text-color);
+        color: var(--icon-color);
         border: none;
         cursor: pointer;
         z-index: 8;
         padding: 0;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
         opacity: 0;
         transform: translateX(-100%);
-        /* Snappy slide-in — a magnetic snap to the edge, not a slow fade. */
-        transition: opacity 0.22s var(--ease), transform 0.2s var(--ease-out),
-                    color 0.3s var(--ease), background 0.3s var(--ease), box-shadow 0.3s var(--ease);
-        box-shadow: var(--glass-drop), var(--glass-edge), inset 0 0 0 100px transparent;
+        /* Theme colours snap instead of tweening. The opaque colour-mix
+           base avoids showing the page background's 0.3s fade through the
+           glass, which otherwise reads as the handle arriving late. */
+        transition: opacity 0.22s var(--ease), transform 0.2s var(--ease-out);
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-left),
+                    inset 0 0 0 100px transparent;
         pointer-events: none;
       }
       .mascot-reopen.is-visible { opacity: 1; transform: translateX(0); pointer-events: auto; }
@@ -2218,13 +2423,23 @@
         height: 20px;
         margin-left: 4px;            /* nudge off the clipped left edge */
         pointer-events: none;
-        transition: color 0.3s var(--ease);
+        color: inherit;
+        transition: none;
       }
       /* Pointer on the button → soft sage tint and a lift, like the nav tabs. */
       .mascot-reopen:hover {
-        box-shadow: var(--glass-drop), var(--glass-edge), inset 0 0 0 100px var(--glass-tint);
+        background-color: var(--reopen-bg-hover);
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-left-pop),
+                    inset 0 0 0 100px var(--glass-tint);
         color: var(--accent-color);
         transform: translateY(-2px);
+      }
+      .mascot-reopen:focus-visible {
+        outline: none;
+        background-color: var(--reopen-bg-hover);
+        color: var(--accent-color);
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-left),
+                    inset 0 0 0 100px color-mix(in srgb, var(--accent-color) 14%, transparent);
       }
       .mascot-reopen:active {
         transform: scale(0.94);
@@ -2235,16 +2450,56 @@
       .mascot-reopen.side-right {
         border-radius: 50% 0 0 50%;
         transform: translateX(100%);
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-right),
+                    inset 0 0 0 100px transparent;
       }
       .mascot-reopen.side-right.is-visible { transform: translateX(0); }
+      .mascot-reopen.side-right:hover {
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-right-pop),
+                    inset 0 0 0 100px var(--glass-tint);
+      }
+      .mascot-reopen.side-right:focus-visible {
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-right),
+                    inset 0 0 0 100px color-mix(in srgb, var(--accent-color) 14%, transparent);
+      }
       .mascot-reopen.side-right svg { margin-left: 0; margin-right: 4px; }
+      [data-theme="dark"] .mascot-reopen {
+        color: var(--icon-color);
+      }
+      [data-theme="dark"] .mascot-reopen:hover {
+        color: var(--accent-color);
+      }
+      [data-theme="dark"] .mascot-reopen:focus-visible {
+        color: var(--accent-color);
+      }
       /* While dragged, the handle detaches from the edge into a full, freely
          moved disc (no edge clip), so repositioning it never looks broken. */
+      .mascot-reopen.is-grabbing,
+      .mascot-reopen.is-settling {
+        outline: none;
+        background-color: var(--reopen-bg);
+        background-image: var(--reopen-sheen);
+        -webkit-backdrop-filter: var(--glass-blur);
+        backdrop-filter: var(--glass-blur);
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-free),
+                    inset 0 0 0 100px transparent;
+      }
+      [data-theme="dark"] .mascot-reopen.is-grabbing,
+      [data-theme="dark"] .mascot-reopen.is-settling {
+        color: var(--icon-color);
+      }
       .mascot-reopen.is-grabbing {
         border-radius: 50%;
         transform: none;
         cursor: grabbing;
-        box-shadow: var(--glass-drop-pop), var(--glass-edge);
+      }
+      .mascot-reopen.is-grabbing:focus,
+      .mascot-reopen.is-grabbing:focus-visible,
+      .mascot-reopen.is-settling:focus,
+      .mascot-reopen.is-settling:focus-visible {
+        outline: none;
+        box-shadow: var(--reopen-edge), var(--reopen-shadow-free),
+                    inset 0 0 0 100px transparent;
       }
       .mascot-reopen.is-grabbing svg { margin: 0; }
 
@@ -2359,6 +2614,13 @@
           box-shadow: none;
           border: 1px solid #ddd;
         }
+        /* Backgrounds usually don't print — swap the section-break motif
+           for a plain short rule. */
+        .post-body hr {
+          border-top: 1px solid #ddd;
+          width: 150px;
+        }
+        .post-body hr::before { display: none; }
         .post-body.full-content a {
           color: #000;
           text-decoration: underline;
@@ -2376,6 +2638,21 @@
           animation: none !important;
           opacity: 1 !important;
           transform: none !important;
+        }
+        /* Same guard for every element the entrance/parallax/reveal
+           animations touch. */
+        .header-title,
+        .main-nav ul,
+        h2.post-title,
+        .post-meta,
+        .post-body.full-content,
+        .post-body.full-content img,
+        .featured-img-wrapper img {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+          translate: none !important;
+          scale: none !important;
         }
         h2.post-title,
         .post-body.full-content h2,
@@ -2566,7 +2843,7 @@
             <b:includable id='main' var='top'>
               <b:if cond='data:view.isError'>
                 <div class='error-404' id='error-404'>
-                  <img class='error-mascot' decoding='async' alt='404' width='1024' height='1536' onerror='this.style.display=&quot;none&quot;' src='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/confused.png'/>
+                  <img class='error-mascot' decoding='async' alt='404' width='1024' height='1536' onerror='this.style.display=&quot;none&quot;' src='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/confused.webp'/>
                   <div class='error-bubble'>
                     <span class='lang-zh'>诶？这一页…被你翻丢啦！</span>
                     <span class='lang-en'>Uh-oh — this page ran off!</span>
@@ -2672,6 +2949,10 @@
               </b:if>
 
               <b:if cond='data:view.isMultipleItems'>
+                <!-- Card date: server renders only the machine-readable
+                     datetime; a JS pass fills bilingual display text (the
+                     template language can't format per-language). -->
+                <time class='card-date' expr:datetime='data:post.date.iso8601'/>
                 <b:if cond='data:post.featuredImage'>
                   <!-- srcset lets phones fetch the ~400px rendition and 2x
                        screens the 1400px one instead of everyone paying for
@@ -2860,7 +3141,10 @@
             });
             // Home link is the canonical match for the homepage path
             if (!active && here === '/' && links[0]) active = links[0];
-            if (active) active.classList.add('is-active');
+            if (active) {
+                active.classList.add('is-active');
+                active.setAttribute('aria-current', 'page');
+            }
         })();
 
         // Nav overflow detection — enter scroll mode only when the tabs
@@ -3101,6 +3385,7 @@
             if (document.getElementById('error-404')) return;
 
             var BASE = 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi';
+            var ART_EXT = '.webp';
             var HIDE_KEY = 'mascotHidden';
             // Chatter level: 'full' / 'less' (key moments only) / 'mute'.
             var CHAT_KEY = 'mascotChat';
@@ -3176,7 +3461,7 @@
                 wrap.remove(); reopen.remove();
             };
             var ensureLoaded = function() {
-                if (!imgEl.getAttribute('src')) imgEl.src = BASE + '/happy.png';
+                if (!imgEl.getAttribute('src')) imgEl.src = BASE + '/happy' + ART_EXT;
             };
 
             var lang = function() {
@@ -3201,7 +3486,7 @@
             var loaded = { happy: true };
             var artToken = 0;
             var setArt = function(name, isPeek) {
-                var url = BASE + '/' + name + '.png';
+                var url = BASE + '/' + name + ART_EXT;
                 var token = ++artToken;
                 if (loaded[name]) { imgEl.src = url; return; }
                 var pre = new Image();
@@ -3233,7 +3518,7 @@
                 peekWarmed[name] = true;
                 var pre = new Image();
                 pre.onload = function() { loaded[name] = true; };
-                pre.src = BASE + '/' + name + '.png';
+                pre.src = BASE + '/' + name + ART_EXT;
             };
 
             // Idle is declared up here (hoisted) so say() can reset it.
@@ -3806,7 +4091,10 @@
             var lastTheme = document.documentElement.getAttribute('data-theme');
             new MutationObserver(function() {
                 var t = document.documentElement.getAttribute('data-theme');
-                if (t !== lastTheme) { lastTheme = t; say(pick(t === 'dark' ? THEME.dark : THEME.light)); }
+                if (t !== lastTheme) {
+                    lastTheme = t;
+                    say(pick(t === 'dark' ? THEME.dark : THEME.light));
+                }
             }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
             var nav = document.querySelector('nav.main-nav');
@@ -3952,6 +4240,7 @@
                 reBaseLeft = 0, reBaseTop = 0, reSwallowClick = false;
             reopen.addEventListener('pointerdown', function(e) {
                 reDragging = true; reMoved = false; reSwallowClick = false;
+                reopen.classList.remove('is-settling');
                 var r = reopen.getBoundingClientRect();
                 reBaseLeft = r.left; reBaseTop = r.top; reSX = e.clientX; reSY = e.clientY;
                 reopen.style.transition = 'none';   // follow the finger 1:1
@@ -3965,6 +4254,7 @@
                     // Detach into a full, freely-moved disc (drops the edge clip).
                     reopen.classList.add('is-grabbing');
                     reopen.classList.remove('side-right');
+                    reopen.blur(); // suppress mobile focus chrome during drag
                 }
                 if (!reMoved) return;
                 var w = reopen.offsetWidth || 46, h = reopen.offsetHeight || 46;
@@ -3991,10 +4281,14 @@
                     void reopen.offsetWidth;                 // commit the start frame
                     reopen.style.transition = 'left 0.18s var(--ease-out), top 0.18s var(--ease-out), ' +
                                               'border-radius 0.18s var(--ease-out), box-shadow 0.18s var(--ease)';
+                    reopen.classList.add('is-settling');
                     reopen.classList.remove('is-grabbing');  // disc → edge tab (morphs)
                     placeReopen(side, y);                    // → glides home to the edge
                     try { localStorage.setItem(REOPEN_KEY, JSON.stringify({ side: side, y: Math.round(y) })); } catch (er) {}
-                    setTimeout(function() { reopen.style.transition = ''; }, 240);
+                    setTimeout(function() {
+                        reopen.style.transition = '';
+                        reopen.classList.remove('is-settling');
+                    }, 240);
                 } else {
                     reopen.style.transition = '';
                 }
@@ -4132,6 +4426,7 @@
             var el = document.getElementById('error-404');
             if (!el) return;
             var BASE = 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi';
+            var ART_EXT = '.webp';
             var moods = ['confused', 'surprised', 'sad', 'shy'];
             var lines = [
                 { zh: '诶？这一页…被你翻丢啦！',   en: 'Uh-oh — this page ran off!' },
@@ -4146,7 +4441,7 @@
             if (img) {
                 var pre = new Image();
                 pre.onload = function() { img.src = pre.src; };
-                pre.src = BASE + '/' + mood + '.png';
+                pre.src = BASE + '/' + mood + ART_EXT;
             }
             var zh = el.querySelector('.error-bubble .lang-zh');
             var en = el.querySelector('.error-bubble .lang-en');
@@ -4199,29 +4494,55 @@
         const triggerContentFade = callback => {
             fadeTargets.forEach(el => el.classList.add('content-fade-out'));
             setTimeout(() => {
-                callback();
-                setTimeout(() => fadeTargets.forEach(el => el.classList.remove('content-fade-out')), 50);
+                // finally: the page must fade back in even if the callback
+                // throws — otherwise it stays invisible.
+                try { callback(); } finally {
+                    setTimeout(() => fadeTargets.forEach(el => el.classList.remove('content-fade-out')), 50);
+                }
             }, 350);
         };
 
-        // Theme toggle — CSS transitions handle the fade.
+        // Theme toggle — CSS transitions handle the fade. aria-pressed and
+        // the theme-color metas (browser chrome tint) track the state.
         const themeToggle = document.getElementById("theme-toggle");
+        const syncThemeUI = () => {
+            const dark = root.getAttribute("data-theme") === "dark";
+            if (themeToggle) themeToggle.setAttribute("aria-pressed", dark ? "true" : "false");
+            document.querySelectorAll('meta[name="theme-color"]').forEach(m => {
+                m.setAttribute("content", dark ? "#1a1915" : "#faf9f4");
+            });
+        };
+        syncThemeUI();
         if (themeToggle) {
           themeToggle.addEventListener("click", () => {
             const newTheme = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
             root.setAttribute("data-theme", newTheme);
-            localStorage.setItem("theme", newTheme);
+            try { localStorage.setItem("theme", newTheme); } catch (e) {}
+            syncThemeUI();
           });
         }
 
-        // Language toggle logic
+        // Language toggle logic. The aria-labels name the DESTINATION state
+        // ("Switch to English"), which reads better than a static "Toggle
+        // Language"; the variant button is only visible in Chinese mode, so
+        // its label stays Chinese.
         const langToggle = document.getElementById("lang-toggle");
+        const syncToggleLabels = () => {
+            if (langToggle) langToggle.setAttribute("aria-label",
+                root.getAttribute("data-lang") === "zh" ? "Switch to English" : "切换到中文");
+            const vt = document.getElementById("variant-toggle");
+            if (vt) vt.setAttribute("aria-label",
+                root.getAttribute("data-variant") === "simp" ? "切换到繁体中文" : "切换到简体中文");
+        };
+        syncToggleLabels();
         if (langToggle) {
           langToggle.addEventListener("click", () => {
             triggerContentFade(() => {
                 const newLang = root.getAttribute("data-lang") === "zh" ? "en" : "zh";
                 root.setAttribute("data-lang", newLang);
-                localStorage.setItem("lang", newLang);
+                root.lang = newLang === "zh" ? (root.getAttribute("data-variant") === "trad" ? "zh-Hant" : "zh-Hans") : "en";
+                try { localStorage.setItem("lang", newLang); } catch (e) {}
+                syncToggleLabels();
             });
           });
         }
@@ -4248,7 +4569,9 @@
               });
               walkTextNodes(document.body, converter);
               root.setAttribute("data-variant", targetVariant);
-              localStorage.setItem("variant", targetVariant);
+              if (root.getAttribute("data-lang") === "zh") root.lang = targetVariant === "trad" ? "zh-Hant" : "zh-Hans";
+              try { localStorage.setItem("variant", targetVariant); } catch (e) {}
+              syncToggleLabels();
               if (callback) callback();
           };
 
@@ -4336,6 +4659,116 @@
         }
 
         adjustPostTypography(document);
+
+        // List-card dates — fill each server-rendered <time class='card-date'>
+        // with bilingual display spans. The calendar date is read straight off
+        // the ISO string (no Date/TZ round-trip: the authored date must not
+        // drift a day for far-away readers). CSS reserves the row height, so
+        // the fill never shifts layout.
+        const CARD_EN_MONTHS = ['January','February','March','April','May','June',
+                                'July','August','September','October','November','December'];
+        function formatCardDates(root) {
+            const notCategory = { '中文': 1, 'english': 1, 'en': 1, 'zh': 1 };
+            root.querySelectorAll('time.card-date').forEach(el => {
+                if (el.firstChild) return;   // idempotent across infinite-scroll re-runs
+                const m = (el.getAttribute('datetime') || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (!m) { el.style.display = 'none'; return; }
+                // First non-language label from the card's hidden tags →
+                // "CATEGORY · DATE" eyebrow. The span is a .translatable-tag,
+                // localised by the translateTagsIn pass that follows.
+                const post = el.closest('.post-outer');
+                let cat = null;
+                if (post) {
+                    post.querySelectorAll('.hidden-tag').forEach(t => {
+                        if (cat) return;
+                        const raw = (t.getAttribute('data-raw-tag') || t.textContent).trim();
+                        if (raw && !notCategory[raw.toLowerCase()]) cat = raw;
+                    });
+                }
+                if (cat) {
+                    const catEl = document.createElement('span');
+                    catEl.className = 'translatable-tag';
+                    catEl.setAttribute('data-raw-tag', cat);
+                    const cz = document.createElement('span');
+                    cz.className = 'lang-zh';
+                    cz.textContent = cat;
+                    const ce = document.createElement('span');
+                    ce.className = 'lang-en';
+                    ce.textContent = cat;
+                    catEl.append(cz, ce);
+                    el.append(catEl, ' · ');
+                }
+                const y = +m[1], mo = +m[2], d = +m[3];
+                const zh = document.createElement('span');
+                zh.className = 'lang-zh';
+                zh.textContent = y + '年' + mo + '月' + d + '日';
+                const en = document.createElement('span');
+                en.className = 'lang-en';
+                en.textContent = CARD_EN_MONTHS[mo - 1] + ' ' + d + ', ' + y;
+                el.append(zh, en);
+            });
+        }
+        formatCardDates(document);
+
+        // Listing masthead — label/search/archive pages open with a kicker +
+        // serif headline, derived from the URL alone (no template accessors).
+        // Synchronous in this handler so it paints with the page. The label
+        // headline is a .translatable-tag, picked up by the
+        // translateTagsIn(document) pass below.
+        (function() {
+            const list = document.querySelector('.blog-posts');
+            if (!list || document.querySelector('.post-body.full-content')) return;
+            let path = location.pathname;
+            try { path = decodeURIComponent(path); } catch (e) {}
+            const label = path.match(/\/search\/label\/(.+?)\/?$/);
+            const archive = path.match(/^\/(\d{4})(?:\/(\d{2}))?\/?$/);
+            let q = null;
+            if (/^\/search\/?$/.test(path)) {
+                try { q = new URLSearchParams(location.search).get('q'); } catch (e) {}
+            }
+            let kicker, titleZh, titleEn, rawTag = null;
+            if (label) {
+                kicker = { zh: '分类', en: 'Category' };
+                rawTag = label[1];
+                titleZh = titleEn = rawTag;
+            } else if (q) {
+                kicker = { zh: '搜索', en: 'Search' };
+                titleZh = titleEn = '“' + q + '”';
+            } else if (archive) {
+                kicker = { zh: '归档', en: 'Archive' };
+                const y = +archive[1];
+                if (archive[2]) {
+                    const mo = +archive[2];
+                    titleZh = y + '年' + mo + '月';
+                    titleEn = CARD_EN_MONTHS[mo - 1] + ' ' + y;
+                } else {
+                    titleZh = y + '年';
+                    titleEn = String(y);
+                }
+            } else { return; }
+
+            // Bilingual element builder — textContent only (label/query come
+            // from the URL; never inject them as HTML).
+            const bi = function(tag, cls, zh, en) {
+                const el = document.createElement(tag);
+                el.className = cls;
+                const s1 = document.createElement('span');
+                s1.className = 'lang-zh';
+                s1.textContent = zh;
+                const s2 = document.createElement('span');
+                s2.className = 'lang-en';
+                s2.textContent = en;
+                el.append(s1, s2);
+                return el;
+            };
+            const hdr = document.createElement('header');
+            hdr.className = 'listing-header';
+            hdr.append(bi('p', 'listing-kicker', kicker.zh, kicker.en));
+            const title = bi('h2', 'listing-title' + (rawTag ? ' translatable-tag' : ''), titleZh, titleEn);
+            if (rawTag) title.setAttribute('data-raw-tag', rawTag);
+            hdr.append(title);
+            list.parentNode.insertBefore(hdr, list);
+        })();
 
         // Static tag-translation dictionary — no external API. Unknown tags
         // fall through to their original text. Add new tags here.
@@ -4436,6 +4869,7 @@
         // posts get the same treatment as the initial page.
         window.__rinuanPostProcess = function(root) {
             adjustPostTypography(root);
+            formatCardDates(root);
             translateTagsIn(root);
         };
 
@@ -4470,7 +4904,9 @@
             list.after(sentinel, status);
 
             const setStatus = html => { status.innerHTML = html; status.classList.add('is-visible'); };
-            const showEnd = () => setStatus('<span class="end-dingbat">···</span>');
+            // aria-hidden: the mark is decorative; without it screen
+            // readers announce a meaningless "···".
+            const showEnd = () => setStatus('<span class="end-dingbat" aria-hidden="true">···</span>');
             const showError = () => {
                 setStatus(L('加载出错', 'Couldn’t load') + '<button type="button" class="retry-btn">' + L('重试', 'Retry') + '</button>');
                 status.querySelector('.retry-btn').addEventListener('click', () => { status.classList.remove('is-visible'); load(); });

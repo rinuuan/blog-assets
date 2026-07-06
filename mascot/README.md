@@ -5,6 +5,7 @@
 Path: `mascot/blog-mascot.png`
 
 - Original full-size transparent mascot illustration.
+- Matching high-quality WebP derivative: `mascot/blog-mascot.webp`.
 - Intended as the visual reference for future expressions and variants.
 
 ## Web-optimized sets
@@ -16,6 +17,7 @@ Paths:
 
 - Intended for the Blogger theme mascot.
 - 400 px wide, true-color RGBA transparent PNGs.
+- Matching `.webp` files sit beside each PNG. They are high-quality WebP derivatives for lighter delivery while keeping the PNGs as editable/source assets.
 - Exported with anti-aliasing and prefiltering to suppress moire and edge artifacts.
 - Keep these files in RGBA mode; palette quantization can reintroduce banding and dithering.
 - jsDelivr base URLs:
@@ -37,6 +39,7 @@ Paths:
 - `mascot/emotions-hd/*.png`
 
 - Original transparent PNG exports.
+- Matching `.webp` files sit beside each PNG for high-quality lighter copies.
 - Intended for archival use, future edits, and high-resolution output.
 - Do not use these files for the 140 px-wide Blogger mascot unless full resolution is required.
 
