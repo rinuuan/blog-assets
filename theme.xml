@@ -2463,15 +2463,6 @@
                     inset 0 0 0 100px color-mix(in srgb, var(--accent-color) 14%, transparent);
       }
       .mascot-reopen.side-right svg { margin-left: 0; margin-right: 4px; }
-      [data-theme="dark"] .mascot-reopen {
-        color: var(--icon-color);
-      }
-      [data-theme="dark"] .mascot-reopen:hover {
-        color: var(--accent-color);
-      }
-      [data-theme="dark"] .mascot-reopen:focus-visible {
-        color: var(--accent-color);
-      }
       /* While dragged, the handle detaches from the edge into a full, freely
          moved disc (no edge clip), so repositioning it never looks broken. */
       .mascot-reopen.is-grabbing,
@@ -2483,10 +2474,6 @@
         backdrop-filter: var(--glass-blur);
         box-shadow: var(--reopen-edge), var(--reopen-shadow-free),
                     inset 0 0 0 100px transparent;
-      }
-      [data-theme="dark"] .mascot-reopen.is-grabbing,
-      [data-theme="dark"] .mascot-reopen.is-settling {
-        color: var(--icon-color);
       }
       .mascot-reopen.is-grabbing {
         border-radius: 50%;
@@ -3003,29 +2990,34 @@
                         const currentUrl = window.location.href.split(/[?#]/)[0];
 
                         window.loadRelatedPosts = json => {
-                          let html = '';
+                          list.textContent = '';
+                          let count = 0;
                           if (json && json.feed && json.feed.entry) {
                             const posts = json.feed.entry;
-                            let count = 0;
                             for (let i = 0; i < posts.length; i++) {
-                              const title = posts[i].title.$t;
+                              const title = posts[i].title && posts[i].title.$t ? posts[i].title.$t : '';
+                              if (!title) continue;
                               let url = '';
-                              for (let j = 0; j < posts[i].link.length; j++) {
-                                if (posts[i].link[j].rel === 'alternate') {
-                                  url = posts[i].link[j].href;
+                              const links = posts[i].link || [];
+                              for (let j = 0; j < links.length; j++) {
+                                if (links[j].rel === 'alternate') {
+                                  url = links[j].href;
                                   break;
                                 }
                               }
-                              if (url.split(/[?#]/)[0] === currentUrl) continue;
+                              if (!url || url.split(/[?#]/)[0] === currentUrl) continue;
 
-                              html += '<li><a href="' + url + '">' + title + '</a></li>';
+                              const item = document.createElement('li');
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.textContent = title;
+                              item.appendChild(link);
+                              list.appendChild(item);
                               count++;
                               if (count >= 3) break;
                             }
                           }
-                          if (html) {
-                            list.innerHTML = html;
-                          } else {
+                          if (!count) {
                             if (wrapper) wrapper.style.display = 'none';
                           }
                         };
@@ -3565,11 +3557,30 @@
                 lastLine = l;
                 return l;
             };
+            var pickLineAvoidMood = function(lines, avoidMood) {
+                var pool = lines.filter(function(line) { return line.mood !== avoidMood; });
+                return pick(pool.length ? pool : lines);
+            };
 
+            var pickMood = function(moodArr, avoidMood) {
+                var pool = moodArr.filter(function(m) { return m !== avoidMood; });
+                if (!pool.length) pool = moodArr;
+                return pool[Math.floor(Math.random() * pool.length)];
+            };
             // Show a random line from a mood's pool, tagged with that mood.
             var sayMoods = function(moodArr) {
-                var m = moodArr[Math.floor(Math.random() * moodArr.length)];
+                var m = pickMood(moodArr);
                 var l = pick(MOODS[m]);
+                say({ mood: m, zh: l.zh, en: l.en });
+            };
+            var reactToClick = function() {
+                var m = pickMood(CLICK_MOODS, currentMood);
+                var l = pick(MOODS[m]);
+                if (chatLevel === 'mute') {
+                    setMood(m);
+                    resetIdle();
+                    return;
+                }
                 say({ mood: m, zh: l.zh, en: l.en });
             };
             // Which expressions each "draw from the pools" scenario may use.
@@ -4010,7 +4021,13 @@
                     // hand back to CSS bottom-anchoring (same spot, now tracks bottom)
                     wrap.style.left = ''; wrap.style.top = ''; wrap.style.bottom = '';
                 }, 400);
-                say(pick(HOME));
+                var homeLine = pickLineAvoidMood(HOME, currentMood);
+                if (chatLevel === 'mute') {
+                    setMood(homeLine.mood);
+                    resetIdle();
+                } else {
+                    say(homeLine);
+                }
             };
             imgEl.style.touchAction = 'none';
             imgEl.style.cursor = 'grab';
@@ -4076,8 +4093,9 @@
                     }
                     return;
                 }
-                // Tapping while tucked just peeks it out — no line.
-                if (tucked) { untuck(); return; }
+                // Tapping while tucked still counts as a click reaction:
+                // untuck first, then switch to a different expression.
+                if (tucked) { untuck(); reactToClick(); return; }
                 // Distinguish single tap (line) from double tap (go home).
                 var now = Date.now();
                 if (now - lastTap < 320) {
@@ -4087,7 +4105,7 @@
                 } else {
                     lastTap = now;
                     if (tapTimer) clearTimeout(tapTimer);
-                    tapTimer = setTimeout(function() { sayMoods(CLICK_MOODS); tapTimer = null; }, 320);
+                    tapTimer = setTimeout(function() { reactToClick(); tapTimer = null; }, 320);
                 }
             };
             imgEl.addEventListener('pointerup', endDrag);
@@ -4639,6 +4657,8 @@
             root.querySelectorAll('.post-outer').forEach(post => {
                 const body = post.querySelector('.post-body');
                 if (!body) return;
+                if (body.dataset.typographyAdjusted === '1') return;
+                body.dataset.typographyAdjusted = '1';
 
                 const tagNodes = post.querySelectorAll('.post-tag, .hidden-tag');
                 const tags = Array.from(tagNodes).map(t => {
