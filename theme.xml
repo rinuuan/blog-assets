@@ -3384,8 +3384,18 @@
             // The 404 page shows the mascot as its hero — skip here.
             if (document.getElementById('error-404')) return;
 
-            var BASE = 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi';
-            var ART_EXT = '.webp';
+            var ART = {
+                happy: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/happy.webp',
+                angry: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/angry.webp',
+                sad: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/sad.webp',
+                surprised: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/surprised.webp',
+                shy: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/shy.webp',
+                confused: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/confused.webp',
+                excited: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/excited.webp',
+                sleepy: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/sleepy.webp',
+                'peek-left': 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/peek-left.webp',
+                'peek-right': 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/peek-right.webp'
+            };
             var HIDE_KEY = 'mascotHidden';
             // Chatter level: 'full' / 'less' (key moments only) / 'mute'.
             var CHAT_KEY = 'mascotChat';
@@ -3461,7 +3471,7 @@
                 wrap.remove(); reopen.remove();
             };
             var ensureLoaded = function() {
-                if (!imgEl.getAttribute('src')) imgEl.src = BASE + '/happy' + ART_EXT;
+                if (!imgEl.getAttribute('src')) imgEl.src = ART.happy;
             };
 
             var lang = function() {
@@ -3486,7 +3496,7 @@
             var loaded = { happy: true };
             var artToken = 0;
             var setArt = function(name, isPeek) {
-                var url = BASE + '/' + name + ART_EXT;
+                var url = ART[name] || ART.happy;
                 var token = ++artToken;
                 if (loaded[name]) { imgEl.src = url; return; }
                 var pre = new Image();
@@ -3518,7 +3528,7 @@
                 peekWarmed[name] = true;
                 var pre = new Image();
                 pre.onload = function() { loaded[name] = true; };
-                pre.src = BASE + '/' + name + ART_EXT;
+                pre.src = ART[name] || ART.happy;
             };
 
             // Idle is declared up here (hoisted) so say() can reset it.
@@ -4425,8 +4435,12 @@
         (function() {
             var el = document.getElementById('error-404');
             if (!el) return;
-            var BASE = 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi';
-            var ART_EXT = '.webp';
+            var ART = {
+                confused: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/confused.webp',
+                surprised: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/surprised.webp',
+                sad: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/sad.webp',
+                shy: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/shy.webp'
+            };
             var moods = ['confused', 'surprised', 'sad', 'shy'];
             var lines = [
                 { zh: '诶？这一页…被你翻丢啦！',   en: 'Uh-oh — this page ran off!' },
@@ -4441,7 +4455,7 @@
             if (img) {
                 var pre = new Image();
                 pre.onload = function() { img.src = pre.src; };
-                pre.src = BASE + '/' + mood + ART_EXT;
+                pre.src = ART[mood];
             }
             var zh = el.querySelector('.error-bubble .lang-zh');
             var en = el.querySelector('.error-bubble .lang-en');

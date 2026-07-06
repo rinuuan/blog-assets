@@ -83,7 +83,7 @@ https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi
 
 角色支持拖动、吸边、闲置探头、尺寸调节、对话级别设置、隐藏和重新唤出；相关偏好保存在浏览器的 `localStorage` 中。素材规格和目录说明见 [`mascot/README.md`](mascot/README.md)。
 
-若要使用自己的素材，请保持透明 PNG/WebP、相同文件名及一致的画布比例，或同步修改 `theme.xml` 中的 `BASE` 地址和 `ART_EXT` 扩展名。
+若要使用自己的素材，请保持透明 PNG/WebP、相同文件名及一致的画布比例，或同步修改 `theme.xml` 中的 `ART` 图源表。
 
 ### 配色与排版
 
