@@ -6074,37 +6074,14 @@
                         });
                         return;
                     }
-                    let probeFrame = 0;
-                    let finished = false;
-                    const cleanup = () => {
-                        customFormContainer.removeEventListener("transitionend", onEnd);
-                        if (probeFrame) cancelAnimationFrame(probeFrame);
-                        probeFrame = 0;
-                        cancelPendingRelocation = null;
-                    };
-                    const finish = () => {
-                        if (finished) return;
-                        finished = true;
-                        cleanup();
-                        if (token === formActionToken) callback();
-                    };
                     const onEnd = event => {
                         if (event.target !== customFormContainer || event.propertyName !== "grid-template-rows") return;
-                        finish();
+                        customFormContainer.removeEventListener("transitionend", onEnd);
+                        cancelPendingRelocation = null;
+                        if (token === formActionToken) callback();
                     };
                     customFormContainer.addEventListener("transitionend", onEnd);
-                    probeFrame = requestAnimationFrame(() => {
-                        probeFrame = requestAnimationFrame(() => {
-                            probeFrame = 0;
-                            if (token !== formActionToken || customFormContainer.classList.contains("is-expanded")) return;
-                            const collapsedRow = parseFloat(getComputedStyle(customFormContainer).gridTemplateRows);
-                            if (Number.isFinite(collapsedRow) && collapsedRow <= 2.5) finish();
-                        });
-                    });
-                    cancelPendingRelocation = () => {
-                        finished = true;
-                        cleanup();
-                    };
+                    cancelPendingRelocation = () => customFormContainer.removeEventListener("transitionend", onEnd);
                 };
                 const applyEditorHeight = (iframe, value, force) => {
                     if (editorReloadPending && !force) return;

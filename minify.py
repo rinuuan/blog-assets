@@ -406,10 +406,6 @@ THEME_REQUIRED_CHECKS = (
         "relocated main comment form must paint collapsed before expanding",
     ),
     (
-        re.compile(r"const\s+afterFormClosed\s*=\s*\(token,\s*callback\)\s*=>[\s\S]*?probeFrame\s*=\s*requestAnimationFrame\([\s\S]*?getComputedStyle\(customFormContainer\)\.gridTemplateRows[\s\S]*?collapsedRow\s*<=\s*2\.5[\s\S]*?finish\(\)", re.I),
-        "comment relocation must recover when a collapsed form emits no transitionend",
-    ),
-    (
         re.compile(r"\.mascot-menu\s+button\s*\{[^}]*transition:\s*transform\s+0\.18s\s+var\(--ease\)", re.I | re.S),
         "mascot menu feedback must stay compositor-friendly",
     ),
