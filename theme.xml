@@ -7,22 +7,22 @@
     <meta content='#faf9f4' media='(prefers-color-scheme: light)' name='theme-color'/>
     <meta content='#1a1915' media='(prefers-color-scheme: dark)' name='theme-color'/>
     <title><data:view.title.escaped/></title>
-    <b:include data='blog' name='all-head-content'/>
 
-    <meta expr:content='data:view.title.escaped' property='og:title'/>
-    <meta expr:content='data:view.url.canonical' property='og:url'/>
     <meta expr:content='data:blog.title' property='og:site_name'/>
 
-    <!-- Default share cover (1200x630) for non-article views and articles without a featured image. -->
-    <b:if cond='data:view.isSingleItem'>
+    <b:if cond='data:view.isPost'>
       <meta content='article' property='og:type'/>
+    <b:else/>
+      <meta content='website' property='og:type'/>
+    </b:if>
+    <!-- Default share cover (1200x630) for views without a featured image. -->
+    <b:if cond='data:view.isSingleItem'>
       <b:if cond='data:view.featuredImage'>
         <meta expr:content='resizeImage(data:view.featuredImage, 1200, &quot;1200:630&quot;)' property='og:image'/>
       <b:else/>
         <meta content='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/cover-light.png' property='og:image'/>
       </b:if>
     <b:else/>
-      <meta content='website' property='og:type'/>
       <meta content='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/cover-light.png' property='og:image'/>
     </b:if>
     <meta content='1200' property='og:image:width'/>
@@ -30,15 +30,17 @@
     <meta content='summary_large_image' name='twitter:card'/>
 
     <b:if cond='data:view.description'>
-      <meta expr:content='data:view.description.escaped' property='og:description'/>
       <meta expr:content='data:view.description.escaped' name='twitter:description'/>
     </b:if>
+    <!-- Keep the preferred share image before Blogger's generated metadata. -->
+    <b:include data='blog' name='all-head-content'/>
 
     <!-- External fonts are decorative here; keep them out of the first render path. -->
     <link href='https://fonts.gstatic.com' rel='preconnect' crossorigin='anonymous'/>
     <link href='https://fonts.googleapis.com' rel='preconnect'/>
+    <link href='https://www.blogger.com' rel='preconnect'/>
+    <link href='https://blogger.googleusercontent.com' rel='preconnect'/>
     <link href='https://cdn.jsdelivr.net' rel='dns-prefetch'/>
-    <link href='https://www.blogger.com' rel='dns-prefetch'/>
 
     <script type='text/javascript'>
       //<![CDATA[
@@ -92,9 +94,6 @@
         root.setAttribute("data-theme", theme);
         root.setAttribute("data-lang", lang);
         root.setAttribute("data-variant", variant || "simp");
-
-        // Logo steam already drawn this session -> show the line instantly (pre-paint).
-        try { if (sessionStorage.getItem("steamDrawn")) root.classList.add("steam-done"); } catch (e) {}
 
         // Mirror the resolved prefs onto browser-facing UI before first paint.
         root.lang = lang === "zh" ? ((variant || "simp") === "trad" ? "zh-Hant" : "zh-Hans") : "en";
@@ -481,7 +480,7 @@
         transform: translateY(8px) !important;
         pointer-events: none;
         /* Asymmetric: quick exit, 0.5s decelerating return. */
-        transition-duration: 0.3s !important;
+        transition-duration: 0.24s !important;
         transition-timing-function: var(--ease) !important;
       }
 
@@ -513,6 +512,12 @@
         .post-outer:has(.post-body.full-content) .post-body.full-content { animation-delay: 0.18s; }
       }
 
+      .top-actions,
+      .mascot-reopen {
+        -webkit-backdrop-filter: var(--glass-blur);
+        backdrop-filter: var(--glass-blur);
+      }
+
       /* Keep view controls reachable while reading. */
       .top-actions {
         position: fixed;
@@ -523,12 +528,11 @@
         z-index: 10;
         padding: 3px;
         border-radius: 26px;
+        overflow: hidden;
         /* Use a flat tint so theme changes interpolate cleanly. */
         background: none;
         background-color: var(--glass-chrome);
-        -webkit-backdrop-filter: var(--glass-blur);
-        backdrop-filter: var(--glass-blur);
-        box-shadow: var(--glass-drop), var(--glass-edge);
+        box-shadow: var(--glass-drop), var(--glass-edge), inset 0 0 0 100px transparent;
         transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out),
                     background-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
       }
@@ -561,6 +565,17 @@
                     transform var(--theme-duration) var(--theme-ease);
       }
 
+      .top-actions .action-btn:focus-visible {
+        position: relative;
+        z-index: 1;
+        outline-offset: -4px;
+      }
+
+      /* Switch the small glass surface with foreground colours; animating it adds blur repaints. */
+      .is-theme-switching .top-actions {
+        transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out),
+                    background-color 0s, box-shadow 0s;
+      }
       /* Same instant-press feedback as the pill buttons. */
       .action-btn:active {
         transform: scale(0.92);
@@ -582,14 +597,12 @@
         transform-box: fill-box;
         transform-origin: center;
         transition: transform var(--theme-duration) var(--theme-ease);
-        will-change: transform;
       }
       /* The cut is a mask hole (black subtracts); parked off the disc in light so the sun is whole. */
       .theme-ico .moon-cut {
         fill: #000;
         transform: translate(7px, -8px);
         transition: transform var(--theme-duration) var(--theme-ease);
-        will-change: transform;
       }
       .theme-ico .sun-rays {
         stroke: currentColor;
@@ -599,7 +612,6 @@
         transform-origin: center;
         transition: opacity var(--theme-duration) var(--theme-ease),
                     transform var(--theme-duration) var(--theme-ease);
-        will-change: transform, opacity;
       }
       [data-theme="dark"] .theme-ico .moon-cut { transform: translate(0, 0); }
       [data-theme="dark"] .theme-ico .sun-rays { opacity: 0; transform: scale(0.35) rotate(-50deg); }
@@ -688,56 +700,6 @@
         inset: 0;
         width: 100%;
         height: 100%;
-      }
-
-      /* The steam line fades with the theme like the rest of the logo. */
-      .logo-steam path {
-        transition: stroke 0.3s var(--ease);
-      }
-      /* Separate the steam entrance and idle drift to avoid competing transforms. */
-      .logo-steam-rise,
-      .logo-steam-waft {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        /* The waft pivots around the pot mouth, where the steam attaches. */
-        transform-origin: 33% 68%;
-      }
-      .logo-steam-rise {
-        will-change: transform, opacity;
-        opacity: 1;
-      }
-      .logo-steam-waft {
-        will-change: transform;
-      }
-      @media (prefers-reduced-motion: no-preference) {
-        [data-theme]:not(.steam-done) .logo-steam-rise {
-          opacity: 0;
-        }
-        .steam-go .logo-steam-rise {
-          animation: steam-rise 1.4s var(--ease-out) 0.1s both;
-        }
-        .steam-go .logo-steam-waft {
-          animation: steam-waft 7s ease-in-out 1.7s infinite;
-        }
-        .steam-done .logo-steam-waft {
-          animation: steam-waft 7s ease-in-out infinite;
-        }
-      }
-      /* Unfurl: rises from the pot mouth, swings a touch past upright, settles. */
-      @keyframes steam-rise {
-        0%   { opacity: 0; transform: translateY(10%) rotate(-8deg) scale(0.9); }
-        45%  { opacity: 1; }
-        70%  { transform: translateY(-1.2%) rotate(2.2deg) scale(1.01); }
-        100% { opacity: 1; transform: none; }
-      }
-      /* Organic three-phase drift - unequal sways, so the loop never reads as a metronome. */
-      @keyframes steam-waft {
-        0%, 100% { transform: none; }
-        35%      { transform: translateY(-2.2%) rotate(1.6deg); }
-        70%      { transform: translateY(-0.8%) rotate(-1.1deg); }
       }
 
       .header-desc {
@@ -883,6 +845,18 @@
       .infinite-status.is-visible {
         opacity: 1;
       }
+      /* Keep live-region copy available to screen readers without changing the visual. */
+      .infinite-status .status-copy {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
       /* Loading: a single sage dot that pulses */
       .infinite-status .loading-dot {
         width: 8px;
@@ -998,6 +972,13 @@
         overflow-wrap: anywhere;
         word-break: break-all;
         line-break: anywhere;
+      }
+
+      h2.post-title:lang(en),
+      h2.post-title:lang(en) a,
+      h2.post-title:lang(en) * {
+        word-break: normal;
+        line-break: auto;
       }
 
       /* Title spans must never become no-wrap islands on narrow screens. */
@@ -1418,6 +1399,10 @@
         word-break: break-all;
         line-break: anywhere;
       }
+      [data-lang="en"] .listing-title .lang-en {
+        word-break: normal;
+        line-break: auto;
+      }
 
       /* Pagination */
       .blog-pager {
@@ -1535,7 +1520,7 @@
           .related-posts li {
             animation: card-rise linear both;
             animation-timeline: view();
-            animation-range: entry 0% entry 100%;
+            animation-range: entry 0% entry 45%;
           }
         }
       }
@@ -1561,29 +1546,27 @@
       #custom-comment-form-container {
         display: grid;
         grid-template-rows: 0fr;
-        opacity: 0;
         margin-top: 0;
         margin-bottom: 0;
         width: 100%;
         position: relative;
         pointer-events: none;
-        transition: grid-template-rows 0.3s var(--ease), opacity 0.25s var(--ease), margin 0.3s var(--ease);
+        transition: grid-template-rows 0.28s var(--ease), margin 0.28s var(--ease);
       }
 
       #custom-comment-form-container.is-expanded {
         grid-template-rows: 1fr;
-        opacity: 1;
         pointer-events: auto;
         margin-top: 15px;
         margin-bottom: 15px;
         /* Decelerating open; transitionend drives relocation after the close. */
-        transition: grid-template-rows 0.35s var(--ease-out), opacity 0.3s var(--ease), margin 0.35s var(--ease-out);
+        transition: grid-template-rows 0.32s var(--ease), margin 0.32s var(--ease);
       }
       #custom-comment-form-container.is-returning-main {
-        transition: grid-template-rows 0.16s var(--ease), opacity 0.14s var(--ease), margin 0.16s var(--ease);
+        transition: grid-template-rows 0.22s var(--ease), margin 0.22s var(--ease);
       }
       #custom-comment-form-container.is-returning-main.is-expanded {
-        transition: grid-template-rows 0.24s var(--ease-out), opacity 0.18s var(--ease), margin 0.24s var(--ease-out);
+        transition: grid-template-rows 0.28s var(--ease), margin 0.28s var(--ease);
       }
       /* Directly under the main toggle button: tuck 5px closer. */
       .comments-wrapper > #custom-comment-form-container.is-expanded {
@@ -1598,7 +1581,7 @@
         display: none;
       }
 
-      /* Mirror Blogger's confirmed editor height through one CSS variable. */
+      /* Mirror Blogger's confirmed editor geometry through CSS variables. */
       .form-inner {
         position: relative;
         min-height: 0;
@@ -1606,12 +1589,84 @@
         overflow-anchor: none;
         background-color: var(--bg-color);
         isolation: isolate;
-        contain: paint;
         border: 1px solid var(--comment-border-color);
         border-radius: 14px;
         outline: none;
         box-shadow: var(--comment-form-shadow);
         transition: var(--comment-theme-transition);
+      }
+      /* Crossfade the corrected iframe as one surface while the page theme moves. */
+      .is-comment-view-transition {
+        view-transition-name: none;
+      }
+      .is-comment-view-transition .form-inner {
+        view-transition-name: comment-form;
+        transition: none;
+      }
+      .is-comment-view-transition .top-actions {
+        view-transition-name: comment-theme-actions;
+      }
+      .is-comment-view-transition .reading-bar {
+        view-transition-name: comment-reading-progress;
+      }
+      ::view-transition-old(comment-form),
+      ::view-transition-new(comment-form),
+      ::view-transition-old(comment-theme-actions),
+      ::view-transition-new(comment-theme-actions),
+      ::view-transition-old(comment-reading-progress),
+      ::view-transition-new(comment-reading-progress) {
+        animation-duration: var(--theme-duration);
+        animation-timing-function: var(--theme-ease);
+      }
+      /* Keep the loading status above the iframe, avatar, and interaction layer. */
+      .comment-editor-loading {
+        display: none;
+        position: absolute;
+        z-index: 4;
+        inset: 0;
+        box-sizing: border-box;
+        border-radius: inherit;
+        pointer-events: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+        color: var(--meta-color);
+        background: var(--bg-color);
+        font-size: 0.84rem;
+        letter-spacing: 0.04em;
+      }
+      #custom-comment-form-container.is-expanded[data-editor-state="loading"] .comment-editor-loading,
+      #custom-comment-form-container.is-expanded[data-editor-state="settling"] .comment-editor-loading,
+      #custom-comment-form-container.is-expanded.is-loading-mask .comment-editor-loading,
+      #custom-comment-form-container.is-expanded.is-relocating .comment-editor-loading {
+        display: flex;
+      }
+      .comment-editor-loading::before { content: "加载中"; }
+      [data-variant="trad"] .comment-editor-loading::before { content: "載入中"; }
+      [data-lang="en"] .comment-editor-loading::before { content: "Loading"; }
+      .comment-editor-loading::after {
+        content: "";
+        width: min(180px, 52%);
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+        animation: comment-editor-loading-runner 1.05s linear infinite;
+      }
+      @keyframes comment-editor-loading-runner {
+        from { opacity: 0.3; transform: translateX(-28%); }
+        50% { opacity: 0.9; }
+        to { opacity: 0.3; transform: translateX(28%); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .comment-editor-loading::after {
+          animation: none;
+          background: color-mix(in srgb, var(--accent-color) 35%, var(--bg-color));
+        }
+      }
+      #custom-comment-form-container:not(.is-expanded) .form-inner {
+        border-color: transparent;
+        box-shadow: none;
       }
       @media (hover: hover) {
         .form-inner:hover {
@@ -1623,9 +1678,11 @@
         box-shadow: var(--comment-form-shadow);
       }
 
-      /* Blend the cross-origin editor into each theme without animating its filter. */
+      /* Blend the cross-origin editor into each theme on the shared colour clock. */
       .comments-wrapper iframe#comment-editor {
         display: block;
+        position: relative;
+        z-index: 1;
         border: none;
         background: transparent !important;
         width: 100% !important;
@@ -1648,14 +1705,21 @@
       #custom-comment-form-container.is-relocating iframe#comment-editor {
         opacity: 0;
       }
+      #custom-comment-form-container[data-editor-state="loading"] iframe#comment-editor {
+        opacity: 0;
+      }
       [data-theme="dark"] .comments-wrapper iframe#comment-editor {
         color-scheme: dark !important;
         /* White becomes black; screen(black, backdrop) leaves the backdrop unchanged. */
-        filter: invert(1) hue-rotate(180deg) brightness(0.9);
+        filter: invert(1) hue-rotate(180deg) brightness(1);
         mix-blend-mode: screen;
       }
+      /* Commit cross-origin editor geometry atomically on every viewport. */
+      .comments-wrapper iframe#comment-editor {
+        transition: opacity 0.22s var(--ease-out);
+      }
 
-      /* Restore the filtered avatar through a stable 35px window. */
+      /* Reveal Blogger's active signed-in or anonymous avatar through the iframe. */
       .comment-avatar-window {
         display: block;
         position: absolute;
@@ -1666,43 +1730,54 @@
         height: 35px;
         border-radius: 50%;
         pointer-events: none;
-        background-color: var(--avatar-placeholder);
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
-        transition: none;
-      }
-      .comment-avatar-window.is-ready {
         background-color: transparent;
-        -webkit-backdrop-filter: hue-rotate(0deg) invert(0) contrast(1) brightness(1);
-        backdrop-filter: hue-rotate(0deg) invert(0) contrast(1) brightness(1);
-      }
-      /* Restore the avatar only after the embedded image loads. */
-      [data-theme="dark"] .comment-avatar-window.is-ready:not([hidden]) {
-        -webkit-backdrop-filter: hue-rotate(180deg) invert(1) contrast(1.23) brightness(1.01);
-        backdrop-filter: hue-rotate(180deg) invert(1) contrast(1.23) brightness(1.01);
-      }
-      .comment-avatar-window.has-static-avatar {
-        background: transparent;
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
-      }
-      .comment-avatar-static {
-        display: block;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-        opacity: 1;
-        transform: none;
+        -webkit-backdrop-filter: invert(0) hue-rotate(0deg);
+        backdrop-filter: invert(0) hue-rotate(0deg);
+        filter: url("#comment-avatar-presence");
+        mix-blend-mode: normal;
         transition: none;
       }
-      .comment-avatar-window[hidden] { display: none; }
-
-      @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-        [data-theme="dark"] .comment-avatar-window.is-ready:not([hidden]) {
-          background-color: var(--avatar-placeholder);
+      /* Never sample the clipped iframe while the form is opening. */
+      #custom-comment-form-container[data-editor-state="opening"] .comment-avatar-window:not([hidden]) {
+        opacity: 0;
+      }
+      #custom-comment-form-container.is-relocating .comment-avatar-window:not([hidden]) {
+        opacity: 0;
+      }
+      /* Loading paint owns the frame; closing keeps correction until the last visible pixel. */
+      [data-theme="dark"] #custom-comment-form-container[data-editor-state="loading"] .comment-avatar-window:not([hidden]),
+      [data-theme="dark"] #custom-comment-form-container[data-editor-state="settling"] .comment-avatar-window:not([hidden]) {
+        opacity: 0;
+      }
+      /* Precompose the dark avatar behind the settling mask. */
+      [data-theme="dark"] #custom-comment-form-container[data-editor-state="settling"]:not(.is-relocating) .comment-avatar-window:not([hidden]) {
+        opacity: 1;
+      }
+      /* Reuse the iframe's native inversion on both pixel-synchronized probes. */
+      [data-theme="dark"] .comment-avatar-window:not([hidden]) {
+        -webkit-backdrop-filter: invert(1) hue-rotate(180deg);
+        backdrop-filter: invert(1) hue-rotate(180deg);
+      }
+      .comment-avatar-window-lower { display: none; }
+      .comment-avatar-window-lower[data-avatar-layout="lower"]:not([hidden]) {
+        display: block;
+        top: 69px;
+        filter: url("#comment-avatar-presence");
+      }
+      .comment-avatar-window[data-avatar-layout="lower"]:not(.comment-avatar-window-lower):not([hidden]) {
+        display: none;
+      }
+      @media (max-width: 600px) {
+        /* Keep the signed-in upper probe mounted across theme switches. */
+        .comment-avatar-window[data-avatar-layout="lower"]:not(.comment-avatar-window-lower):not([hidden]) {
+          display: block;
+        }
+        .comment-avatar-window-lower[data-avatar-layout="lower"]:not([hidden]) {
+          top: 94px;
+          transform: translateY(-0.5px);
         }
       }
+      .comment-avatar-window[hidden] { display: none; }
 
       #comment-popup {
         position: absolute;
@@ -1754,7 +1829,7 @@
           #comment-holder .comment {
             animation: card-rise linear both;
             animation-timeline: view();
-            animation-range: entry 0% entry 60%;
+            animation-range: entry 0% entry 45%;
           }
         }
       }
@@ -2347,6 +2422,9 @@
         right: 0;
         bottom: 0;
         height: 3px;
+        padding: 0;
+        border: 0;
+        appearance: none;
         /* Hover thickens via scaleY, not height - transform stays on the compositor. */
         transform-origin: bottom;
         background: var(--border-color);
@@ -2360,14 +2438,15 @@
         opacity: 1;
         pointer-events: auto;
       }
-      /* Taller transparent hit area so the thin line is easy to tap/click */
+      /* Keep a central 44px target without blocking the full footer width. */
       .reading-bar::before {
         content: '';
         position: absolute;
-        left: 0;
-        right: 0;
+        left: 50%;
         bottom: 0;
-        height: 20px;
+        width: min(180px, 100vw);
+        height: 44px;
+        transform: translateX(-50%);
       }
       .reading-bar .bar-fill {
         height: 100%;
@@ -2546,7 +2625,7 @@
       .mascot-dragging .mascot-bubble { opacity: 0 !important; }
       /* Smooth glide for edge-snap and double-tap-home */
       .mascot.mascot-snapping {
-        transition: left 0.38s var(--ease-out), top 0.38s var(--ease-out),
+        transition: left 0.34s var(--ease-out), top 0.34s var(--ease-out),
                     opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
       }
       /* Speech bubble floats above the figure */
@@ -2802,8 +2881,6 @@
         /* Same smoothly interpolated chrome tint as the top toggle bar. */
         background: none;
         background-color: var(--glass-chrome);
-        -webkit-backdrop-filter: var(--glass-blur);
-        backdrop-filter: var(--glass-blur);
         color: var(--icon-color);
         border: none;
         cursor: pointer;
@@ -2898,9 +2975,10 @@
         user-select: none;
         -webkit-user-drag: none;
       }
-      @media (hover: hover) and (pointer: fine) {
-        .error-mascot {
-          animation: mascot-bob 4.5s ease-in-out infinite;
+      @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+        .error-404 .error-mascot {
+          animation: card-rise 0.6s var(--ease-out) backwards,
+                     mascot-bob 4.5s ease-in-out 0.6s infinite;
         }
       }
       [data-theme="dark"] .error-mascot {
@@ -3036,13 +3114,6 @@
           translate: none !important;
           scale: none !important;
         }
-        /* The steam rise-in must not leave the logo line hidden on paper. */
-        .logo-steam-rise,
-        .logo-steam-waft {
-          animation: none !important;
-          opacity: 1 !important;
-          transform: none !important;
-        }
         h2.post-title,
         .post-body.full-content h2,
         .post-body.full-content h3 {
@@ -3061,8 +3132,7 @@
 
     <script type='text/javascript'>
       //<![CDATA[
-      // Shared tag-translation dictionary + helpers, defined before any content parses
-      // so inline scripts further down can translate at BUILD time (no post-paint rewrites).
+      // Define tag translation helpers before content parses to avoid post-paint rewrites.
       (function() {
           var DICT = {
               // Navigation
@@ -3080,60 +3150,7 @@
               "Prose": { zh: "散文", en: "Prose" },
               "散文": { zh: "散文", en: "Prose" },
               "第七层": { zh: "第七层", en: "7th Floor" },
-              "7th Floor": { zh: "第七层", en: "7th Floor" },
-
-              // Common categories - ready when you start using them
-              "Life": { zh: "生活", en: "Life" },
-              "生活": { zh: "生活", en: "Life" },
-              "Tech": { zh: "科技", en: "Tech" },
-              "科技": { zh: "科技", en: "Tech" },
-              "技术": { zh: "技术", en: "Tech" },
-              "Art": { zh: "艺术", en: "Art" },
-              "艺术": { zh: "艺术", en: "Art" },
-
-              // Writing & literature
-              "Fiction": { zh: "小说", en: "Fiction" },
-              "Poetry": { zh: "诗歌", en: "Poetry" },
-              "Essay": { zh: "散文", en: "Essay" },
-              "Essays": { zh: "散文", en: "Essays" },
-              "随笔": { zh: "随笔", en: "Musings" },
-              "笔记": { zh: "笔记", en: "Notes" },
-              "Notes": { zh: "笔记", en: "Notes" },
-              "日记": { zh: "日记", en: "Diary" },
-              "Diary": { zh: "日记", en: "Diary" },
-              "翻译": { zh: "翻译", en: "Translation" },
-              "Translation": { zh: "翻译", en: "Translation" },
-              "书评": { zh: "书评", en: "Book Reviews" },
-              "读书": { zh: "读书", en: "Reading" },
-              "Reading": { zh: "读书", en: "Reading" },
-              "Reviews": { zh: "评论", en: "Reviews" },
-              "评论": { zh: "评论", en: "Reviews" },
-
-              // Hobbies & culture
-              "摄影": { zh: "摄影", en: "Photography" },
-              "Photography": { zh: "摄影", en: "Photography" },
-              "旅行": { zh: "旅行", en: "Travel" },
-              "Travel": { zh: "旅行", en: "Travel" },
-              "美食": { zh: "美食", en: "Food" },
-              "Food": { zh: "美食", en: "Food" },
-              "音乐": { zh: "音乐", en: "Music" },
-              "Music": { zh: "音乐", en: "Music" },
-              "电影": { zh: "电影", en: "Films" },
-              "Film": { zh: "电影", en: "Films" },
-              "Movies": { zh: "电影", en: "Movies" },
-
-              // Tech & thought
-              "编程": { zh: "编程", en: "Programming" },
-              "Programming": { zh: "编程", en: "Programming" },
-              "Code": { zh: "代码", en: "Code" },
-              "设计": { zh: "设计", en: "Design" },
-              "Design": { zh: "设计", en: "Design" },
-              "AI": { zh: "AI", en: "AI" },
-              "教程": { zh: "教程", en: "Tutorials" },
-              "Tutorial": { zh: "教程", en: "Tutorial" },
-              "思考": { zh: "思考", en: "Thoughts" },
-              "Thoughts": { zh: "思考", en: "Thoughts" },
-              "随想": { zh: "随想", en: "Reflections" }
+              "7th Floor": { zh: "第七层", en: "7th Floor" }
           };
           window.__rinuanMonths = ['January','February','March','April','May','June',
                                    'July','August','September','October','November','December'];
@@ -3158,6 +3175,30 @@
       })();
       //]]>
     </script>
+
+    <!-- Correct avatar colours while low-chroma profile controls pass through unchanged. -->
+    <svg aria-hidden='true' focusable='false' height='0' style='position:absolute' width='0'>
+      <filter color-interpolation-filters='sRGB' height='100%' id='comment-avatar-presence' width='100%' x='0' y='0'>
+        <feColorMatrix in='SourceGraphic' result='avatarGray' type='saturate' values='0'/>
+        <feBlend in='SourceGraphic' in2='avatarGray' mode='difference' result='avatarChroma'/>
+        <feColorMatrix in='avatarChroma' result='avatarColorSeed' type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  20 20 20 0 -2.2'/>
+        <feComponentTransfer in='avatarColorSeed' result='avatarColorPresence'>
+          <feFuncA tableValues='0 0 1 1 1' type='discrete'/>
+        </feComponentTransfer>
+        <feMorphology in='avatarColorPresence' operator='erode' radius='2' result='avatarSolidColor'/>
+        <feMorphology in='avatarSolidColor' operator='dilate' radius='20' result='avatarMask'/>
+        <feComposite in='SourceGraphic' in2='avatarMask' operator='in' result='avatarBroadCorrection'/>
+        <!-- Flat profile chrome has colour but no local chroma detail. -->
+        <feGaussianBlur edgeMode='duplicate' in='avatarChroma' result='avatarSoftChroma' stdDeviation='3'/>
+        <feBlend in='avatarChroma' in2='avatarSoftChroma' mode='difference' result='avatarDetail'/>
+        <feColorMatrix in='avatarDetail' result='avatarDetailSeed' type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  20 20 20 0 -3.2'/>
+        <feComponentTransfer in='avatarDetailSeed' result='avatarDetailPresence'>
+          <feFuncA tableValues='0 0 1 1 1' type='discrete'/>
+        </feComponentTransfer>
+        <feMorphology in='avatarDetailPresence' operator='dilate' radius='20' result='avatarDetailMask'/>
+        <feComposite in='avatarBroadCorrection' in2='avatarDetailMask' operator='in'/>
+      </filter>
+    </svg>
 
     <div class='outer-wrapper'>
 
@@ -3208,7 +3249,7 @@
               <div class='header-title'>
                 <h1>
                   <a class='header-logo-link' expr:href='data:blog.homepageUrl'>
-                    <!-- Animate the wrapper because Lighthouse flags animated inline SVG targets. -->
+                    <!-- The linked title names this decorative mark for assistive technology. -->
                     <span aria-hidden='true' class='logo-mark'>
                       <svg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
                         <defs>
@@ -3221,13 +3262,9 @@
                         <path d='M 5,50 C 35,50 65,40 95,20 C 85,40 55,45 5,55 Z' fill='currentColor' mask='url(#smoke-cut)'/>
                         <path d='M 15,75 A 18,18 0 0,0 51,75 Z' fill='currentColor'/>
                       </svg>
-                      <span class='logo-steam-rise'>
-                        <span class='logo-steam-waft'>
-                          <svg class='logo-steam' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-                            <path d='M 33,68 C 33,50 50,55 55,30' fill='none' stroke='var(--accent-color)' stroke-linecap='round' stroke-width='3'/>
-                          </svg>
-                        </span>
-                      </span>
+                      <svg class='logo-steam' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
+                        <path d='M 33,68 C 33,50 50,55 55,30' fill='none' stroke='var(--accent-color)' stroke-linecap='round' stroke-width='3'/>
+                      </svg>
                     </span>
                     <span><data:title/></span>
                   </a>
@@ -3392,13 +3429,13 @@
             <b:includable id='main' var='top'>
               <b:if cond='data:view.isError'>
                 <div class='error-404' id='error-404'>
-                  <!-- The visible code and bubble already identify the 404 state. -->
+                  <!-- Decorative mascot; the heading and bubble identify the 404 state. -->
                   <img class='error-mascot' decoding='async' alt='' width='400' height='600' onerror='this.style.display=&quot;none&quot;' src='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/confused.webp'/>
                   <div class='error-bubble'>
                     <span class='lang-zh'>诶？这一页…被你翻丢啦！</span>
                     <span class='lang-en'>Uh-oh — this page ran off!</span>
                   </div>
-                  <div class='error-code'>404</div>
+                  <h2 class='error-code'>404</h2>
                   <a class='read-more error-home' expr:href='data:blog.homepageUrl'>
                     <span class='lang-zh'>← 回到首页</span><span class='lang-en'>← Back home</span>
                   </a>
@@ -3423,7 +3460,7 @@
                       if (label) {
                           kicker = { zh: '分类', en: 'Category' };
                           rawTag = label[1];
-                          // Translated at build time - the title never repaints from raw to translated.
+                          // Translate before insertion so the raw label never paints.
                           var tx = window.__rinuanGetTx ? window.__rinuanGetTx(rawTag) : { zh: rawTag, en: rawTag };
                           titleZh = tx.zh;
                           titleEn = tx.en;
@@ -3482,7 +3519,7 @@
             <b:includable id='commentAuthorAvatar'>
               <div class='avatar-image-container'>
                 <!-- Comments always sit below the fold - safe to lazy-load. -->
-                <img alt='Avatar' class='author-avatar' decoding='async' expr:src='data:comment.authorAvatarSrc' height='40' loading='lazy' width='40'/>
+                <img alt='' class='author-avatar' decoding='async' expr:src='data:comment.authorAvatarSrc' height='40' loading='lazy' width='40'/>
               </div>
             </b:includable>
             <b:includable id='commentDeleteIcon' var='comment'>
@@ -3559,7 +3596,7 @@
 
               <b:if cond='data:view.isPost'>
                 <div class='post-meta'>
-                  <data:post.dateHeader/>
+                  <time class='post-date' expr:datetime='data:post.date.iso8601'><data:post.dateHeader/></time>
                   <b:if cond='data:post.labels'>
                     <b:loop values='data:post.labels' var='label'>
                       <a class='post-tag translatable-tag' expr:data-raw-tag='data:label.name' expr:href='data:label.url' rel='tag'>
@@ -3615,8 +3652,8 @@
                       // heading over an empty list - it appears already complete, or not at all.
                       (() => {
                         const list = document.getElementById('related-posts-list');
-                        const wrapper = document.querySelector('.related-posts');
                         if (!list) return;
+                        const wrapper = list.closest('.related-posts');
 
                         const label = list.getAttribute('data-label');
                         if (!label) return;
@@ -3726,8 +3763,23 @@
               <div class='comment-form'>
                 <h4 id='comment-post-message'><data:messages.postAComment/></h4>
                 <b:include data='post' name='commentFormIframeSrc'/>
-                <!-- Lazy loading defers the editor until comments approach the viewport. -->
-                <iframe allowtransparency='allowtransparency' class='blogger-iframe-colorize blogger-comment-from-post' frameborder='0' height='66' id='comment-editor' loading='lazy' name='comment-editor' src='' title='Comment Editor' width='100%'/>
+                <script type='text/javascript'>
+                  //<![CDATA[
+                  (function() {
+                    var link = document.getElementById("comment-editor-src");
+                    if (!link) return;
+                    var url = new URL(link.href, window.location.href);
+                    var root = document.documentElement;
+                    var locale = root.getAttribute("data-lang") === "en" ? "en" :
+                      (root.getAttribute("data-variant") === "trad" ? "zh-TW" : "zh-CN");
+                    url.searchParams.set("m", "1");
+                    url.searchParams.set("hl", locale);
+                    link.href = url.href;
+                  })();
+                  //]]>
+                </script>
+                <!-- Load ahead of the first click so the collapsed editor opens ready. -->
+                <iframe allowtransparency='allowtransparency' class='blogger-iframe-colorize blogger-comment-from-post' fetchpriority='high' frameborder='0' height='66' id='comment-editor' loading='eager' name='comment-editor' scrolling='no' src='' title='Comment Editor' width='100%'/>
                 <data:post.cmtfpIframe/>
                 <script type='text/javascript'>BLOG_CMT_createIframe(&#39;<data:post.appRpcRelayPath/>&#39;);</script>
               </div>
@@ -3797,23 +3849,8 @@
             window.__rinuanWrapTitles(document);
         })();
 
-        // Kick off the logo steam rise only after window load, once per session -
-        // repeat views show the finished line pre-paint instead.
-        (function() {
-            if (document.documentElement.classList.contains('steam-done')) return;
-            var go = function() {
-                requestAnimationFrame(function() {
-                    document.documentElement.classList.add('steam-go');
-                    try { sessionStorage.setItem('steamDrawn', '1'); } catch (e) {}
-                });
-            };
-            if (document.readyState === 'complete') go();
-            else window.addEventListener('load', go, { once: true });
-        })();
-
         // Desktop margin rails - date (left) + read time (right); pure decoration on single posts, >=1024px.
         (function() {
-            if (window.innerWidth < 1024) return;
             const postBody = document.querySelector('.post-body.full-content');
             if (!postBody) return;
 
@@ -3908,9 +3945,9 @@
             const articleBody = document.querySelector('.post-body.full-content');
             if (!articleBody) return;
 
-            const bar = document.createElement('div');
+            const bar = document.createElement('button');
+            bar.type = 'button';
             bar.className = 'reading-bar';
-            bar.setAttribute('role', 'button');
             // Out of the tab order until visible; update() flips it with is-active.
             bar.setAttribute('tabindex', '-1');
             bar.setAttribute('aria-label', '返回顶部 / Back to top');
@@ -3936,9 +3973,6 @@
                 window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
             };
             bar.addEventListener('click', toTop);
-            bar.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toTop(); }
-            });
 
             // Show the hint; if a duration is given, auto-hide after it.
             let hideTimer = null;
@@ -4048,7 +4082,9 @@
             var wrap = document.createElement('div');
             wrap.className = 'mascot';
             // The <img> starts srcless.
-            var L = function(zh, en) { return '<span class="lang-zh">' + zh + '</span><span class="lang-en">' + en + '</span>'; };
+            var L = function(simp, trad, en) {
+                return '<span class="lang-zh"><span class="variant-simp">' + simp + '</span><span class="variant-trad">' + trad + '</span></span><span class="lang-en">' + en + '</span>';
+            };
             wrap.innerHTML =
                 '<div class="mascot-bubble" aria-hidden="true"><span class="mascot-text"></span></div>' +
                 // The decorative figure stays hidden from assistive technology.
@@ -4063,7 +4099,7 @@
             gear.className = 'action-btn';
             gear.id = 'mascot-settings';
             gear.type = 'button';
-            gear.setAttribute('aria-haspopup', 'true');
+            gear.setAttribute('aria-haspopup', 'dialog');
             gear.setAttribute('aria-controls', 'mascot-menu');
             gear.setAttribute('aria-expanded', 'false');
             gear.setAttribute('aria-label', '看板娘设置 / Mascot settings');
@@ -4083,20 +4119,20 @@
             var menu = document.createElement('div');
             menu.className = 'mascot-menu';
             menu.id = 'mascot-menu';
-            menu.setAttribute('role', 'group');
+            menu.setAttribute('role', 'dialog');
             menu.setAttribute('aria-hidden', 'true');
             menu.setAttribute('inert', '');
             menu.setAttribute('aria-label', '看板娘设置 / Mascot settings');
             menu.innerHTML =
-                '<div class="menu-title">' + L('台词', 'Chatter') + '</div>' +
-                '<button type="button" data-level="full">' + L('活泼', 'Lively') + '</button>' +
-                '<button type="button" data-level="less">' + L('少话', 'Quiet') + '</button>' +
-                '<button type="button" data-level="mute">' + L('静音', 'Mute') + '</button>' +
+                '<div class="menu-title">' + L('台词', '台詞', 'Chatter') + '</div>' +
+                '<button type="button" data-level="full">' + L('活泼', '活潑', 'Lively') + '</button>' +
+                '<button type="button" data-level="less">' + L('少话', '少話', 'Quiet') + '</button>' +
+                '<button type="button" data-level="mute">' + L('静音', '靜音', 'Mute') + '</button>' +
                 '<hr/>' +
-                '<div class="menu-title">' + L('大小', 'Size') + '</div>' +
+                '<div class="menu-title">' + L('大小', '大小', 'Size') + '</div>' +
                 '<input type="range" class="mascot-size" min="0.6" max="1.6" step="0.02" aria-label="看板娘大小 / Mascot size"/>' +
                 '<hr/>' +
-                '<button type="button" class="menu-hide" data-act="hide">' + L('收起看板娘', 'Hide mascot') + '</button>';
+                '<button type="button" class="menu-hide" data-act="hide">' + L('收起看板娘', '收起看板娘', 'Hide mascot') + '</button>';
             document.body.appendChild(menu);
 
             // Re-open handle - a light inline icon, no image to download.
@@ -4201,14 +4237,19 @@
             }
 
             var bubbleTimer = null;
+            var currentLine = null;
+            var renderLine = function(line) {
+                var txt = line[lang()] || line.zh;
+                textEl.textContent = lang() === 'zh' ? toVariant(txt) : txt;
+            };
             var say = function(line, hold, force) {
                 if (!line) return;
                 if (wrap.classList.contains('is-hidden')) return;
                 if (chatLevel === 'mute' && !force) return;
                 if (tucked) untuck();
                 setMood(line.mood);
-                var txt = line[lang()] || line.zh;
-                textEl.textContent = lang() === 'zh' ? toVariant(txt) : txt;
+                currentLine = line;
+                renderLine(line);
                 if (updateBubbleSide) updateBubbleSide();
                 bubble.classList.add('is-shown');
                 if (bubbleTimer) clearTimeout(bubbleTimer);
@@ -4217,6 +4258,9 @@
                 // Don't tuck away mid-sentence - push the tuck past this line.
                 if (scheduleTuck) scheduleTuck();
             };
+            document.addEventListener('rinuan:locale-change', function() {
+                if (currentLine && bubble.classList.contains('is-shown')) renderLine(currentLine);
+            });
             // Avoid showing the very same line twice in a row.
             var lastLine = null;
             var pick = function(a) {
@@ -4718,7 +4762,8 @@
                 wrap.classList.add('mascot-snapping');
                 applyPos(defLeft, window.innerHeight - h);
                 try { localStorage.removeItem(POS_KEY); } catch (e) {}
-                setTimeout(function() {
+                motionTimer = setTimeout(function() {
+                    motionTimer = null;
                     wrap.classList.remove('mascot-snapping');
                     // hand back to CSS bottom-anchoring (same spot, now tracks bottom)
                     wrap.style.left = ''; wrap.style.top = ''; wrap.style.bottom = '';
@@ -4830,6 +4875,10 @@
                     mascotResizeRAF = 0;
                     applySize();
                     if (wrap.style.left) { var c = clampPos(parseInt(wrap.style.left, 10), parseInt(wrap.style.top, 10)); applyPos(c.left, c.top); }
+                    if (reopen.classList.contains('is-visible')) {
+                        var rr = reopen.getBoundingClientRect();
+                        placeReopen(reopen.classList.contains('side-right') ? 'right' : 'left', rr.top + rr.height / 2);
+                    }
                 });
             }, { passive: true });
             restorePos();
@@ -5142,6 +5191,7 @@
                 menu.setAttribute('aria-hidden', open ? 'false' : 'true');
                 if (open) menu.removeAttribute('inert');
                 else menu.setAttribute('inert', '');
+                if (open) menu.querySelector('button, input').focus();
                 if (!open && restoreFocus && document.activeElement && menu.contains(document.activeElement)) gear.focus();
             };
             var menuResizeRAF = 0;
@@ -5206,9 +5256,7 @@
                 } catch (e) {}
                 reopen.classList.add('is-visible');   // gear already starts collapsed (set at creation)
             } else {
-                // Decorative art is intentionally demand-loaded. This keeps the 1024px
-                // mascot image out of Lighthouse's first-load image delivery audit,
-                // while real visitors still get it as soon as they interact.
+                // Demand-load decorative art to keep it out of the first-load image audit.
                 var mascotArmed = false;
                 var removeMascotArming = function() {
                     ['pointermove', 'touchstart', 'keydown', 'scroll'].forEach(function(ev) {
@@ -5347,10 +5395,12 @@
                 if (revealed) return;
                 revealed = true;
                 if (revealTimer) clearTimeout(revealTimer);
-                setTimeout(() => {
+                const finish = () => {
                     fadeTargets.forEach(el => el.classList.remove('content-fade-out'));
                     fading = false;
-                }, reduceContentMotion() ? 0 : 50);
+                };
+                if (reduceContentMotion()) finish();
+                else requestAnimationFrame(finish);
             };
             setTimeout(() => {
                 revealTimer = setTimeout(reveal, 1800);
@@ -5361,7 +5411,7 @@
                     reveal();
                     setTimeout(() => { throw e; }, 0);
                 }
-            }, reduceContentMotion() ? 0 : 350);
+            }, reduceContentMotion() ? 0 : 250);
         };
 
         // Theme toggle - one direct DOM update; CSS runs every themed property on one clock.
@@ -5395,6 +5445,29 @@
             root.setAttribute("data-theme", theme);
             syncThemeUI();
         };
+        let commentThemeTransitionVersion = 0;
+        const applyThemeWithCommentSnapshot = theme => {
+            const version = ++commentThemeTransitionVersion;
+            const form = document.querySelector("#custom-comment-form-container.is-expanded .form-inner");
+            const rect = form && form.getBoundingClientRect();
+            const visible = rect && rect.bottom > 0 && rect.top < window.innerHeight &&
+                rect.right > 0 && rect.left < window.innerWidth;
+            if (reduceContentMotion() || typeof document.startViewTransition !== "function" || !visible) {
+                root.classList.remove("is-comment-view-transition");
+                applyTheme(theme);
+                return;
+            }
+            root.classList.add("is-comment-view-transition");
+            const transition = document.startViewTransition(() => {
+                if (version === commentThemeTransitionVersion) applyTheme(theme);
+            });
+            const cleanup = () => {
+                if (version === commentThemeTransitionVersion) {
+                    root.classList.remove("is-comment-view-transition");
+                }
+            };
+            transition.finished.then(cleanup, cleanup);
+        };
         const announceUserTheme = (theme, intentVersion) => {
             document.dispatchEvent(new CustomEvent("rinuan:theme-change", {
                 detail: { theme: theme, userInitiated: true, intentVersion: intentVersion }
@@ -5408,6 +5481,9 @@
             const targetTheme = desiredTheme;
             const currentTheme = root.getAttribute("data-theme");
             if (targetTheme === currentTheme) {
+                // Invalidate an older async View Transition update for the opposite theme.
+                commentThemeTransitionVersion++;
+                root.classList.remove("is-comment-view-transition");
                 root.classList.remove("is-theme-switching");
                 announceUserTheme(currentTheme, themeIntentVersion);
                 return;
@@ -5415,7 +5491,7 @@
             // One class plus one attribute update: foreground colours switch together,
             // while surface transitions safely retarget on rapid reversals.
             root.classList.add("is-theme-switching");
-            applyTheme(targetTheme);
+            applyThemeWithCommentSnapshot(targetTheme);
             if (reduceContentMotion()) {
                 requestAnimationFrame(() => root.classList.remove("is-theme-switching"));
             }
@@ -5443,7 +5519,7 @@
             if (savedTheme === "light" || savedTheme === "dark") return;
             desiredTheme = event.matches ? "dark" : "light";
             root.classList.add("is-theme-switching");
-            applyTheme(desiredTheme);
+            applyThemeWithCommentSnapshot(desiredTheme);
             if (reduceContentMotion()) {
                 requestAnimationFrame(() => root.classList.remove("is-theme-switching"));
             }
@@ -5500,9 +5576,7 @@
 
         // Collect convertible text without touching code or form controls.
         const ignoreTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "IFRAME", "CODE", "PRE", "KBD", "SAMP", "TEXTAREA", "INPUT", "SELECT", "OPTION"]);
-        const collectTextNodes = node => {
-          const nodes = [];
-          const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+        const createTextWalker = node => document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
             acceptNode: n => {
               const parent = n.parentNode;
               if (!parent || ignoreTags.has(parent.nodeName)) return NodeFilter.FILTER_REJECT;
@@ -5512,17 +5586,10 @@
               return NodeFilter.FILTER_ACCEPT;
             }
           }, false);
-
-          let currentNode;
-          while (currentNode = walker.nextNode()) {
-              if (currentNode.nodeValue.trim()) nodes.push(currentNode);
-          }
-          return nodes;
-        };
         let conversionToken = 0;
         const walkTextNodesChunked = (node, applyConversion, done, token) => {
-          const nodes = collectTextNodes(node);
-          let index = 0;
+          const walker = createTextWalker(node);
+          let complete = false;
           const schedule = task => {
             if ("requestIdleCallback" in window) requestIdleCallback(task, { timeout: 120 });
             else setTimeout(task, 0);
@@ -5530,13 +5597,19 @@
           const run = deadline => {
             if (token !== conversionToken) return;
             const start = Date.now();
-            while (index < nodes.length) {
-              nodes[index].nodeValue = applyConversion(nodes[index].nodeValue);
-              index++;
+            while (true) {
+              const currentNode = walker.nextNode();
+              if (!currentNode) {
+                complete = true;
+                break;
+              }
+              if (currentNode.nodeValue.trim()) {
+                currentNode.nodeValue = applyConversion(currentNode.nodeValue);
+              }
               const idleLeft = deadline && typeof deadline.timeRemaining === "function" ? deadline.timeRemaining() : 0;
-              if (index < nodes.length && idleLeft <= 2 && Date.now() - start > 10) break;
+              if (idleLeft <= 2 && Date.now() - start > 10) break;
             }
-            if (index < nodes.length) schedule(run);
+            if (!complete) schedule(run);
             else if (done) done();
           };
           schedule(run);
@@ -5547,14 +5620,18 @@
           const value = targetVariant === "trad" ? "zh-Hant" : "zh-Hans";
           scope.querySelectorAll('.post-body[lang^="zh"], .post-title[lang^="zh"]').forEach(el => el.setAttribute("lang", value));
         };
+        let persistVariant = true;
         const commitVariant = targetVariant => {
           root.setAttribute("data-variant", targetVariant);
           if (root.getAttribute("data-lang") === "zh") root.lang = targetVariant === "trad" ? "zh-Hant" : "zh-Hans";
           syncChinesePostLangs(document, targetVariant);
-          try { localStorage.setItem("variant", targetVariant); } catch (e) {}
+          if (persistVariant) {
+            try { localStorage.setItem("variant", targetVariant); } catch (e) {}
+          }
           syncToggleLabels();
           announceEditorLocale();
           pendingVariant = null;
+          persistVariant = true;
         };
         let openCCLoading = false;
         let openCCQueue = [];
@@ -5569,6 +5646,8 @@
           openCCLoading = true;
           const script = document.createElement("script");
           script.src = "https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js";
+          script.integrity = "sha384-lSi9aFkjJFq3Fe5HZNORU+TFYbMDZh6m2KHdolOWxKNew8tzqMIjj3X1e6D9htV4";
+          script.crossOrigin = "anonymous";
           script.async = true;
           script.setAttribute("data-rinuan-opencc", "1");
           const flush = ok => {
@@ -5592,6 +5671,7 @@
           pendingVariant = targetVariant;
           loadOpenCCLibrary(ok => {
               if (token !== conversionToken) return;
+              persistVariant = ok && !!window.OpenCC;
               if (!ok || !window.OpenCC) {
                   commitVariant("simp");
                   if (callback) callback(false);
@@ -5665,9 +5745,17 @@
         // Process both initial and appended posts.
         const isFullPostView = !!document.querySelector('.post-body.full-content');
 
-        const BLOGGER_IMAGE_RE = /(blogger\.googleusercontent\.com|bp\.blogspot\.com|blogspot\.com)/i;
+        const isBloggerImageUrl = url => {
+            try {
+                const hostname = new URL(url, location.href).hostname.toLowerCase();
+                return hostname === "blogger.googleusercontent.com" ||
+                    hostname === "blogspot.com" || hostname.endsWith(".blogspot.com");
+            } catch (e) {
+                return false;
+            }
+        };
         const resizedBloggerImage = (url, width) => {
-            if (!url || !BLOGGER_IMAGE_RE.test(url)) return "";
+            if (!url || !isBloggerImageUrl(url)) return "";
             const sized = url
                 .replace(/\/(?:s|w)\d+(?:-[^/?#]+)?\//, "/w" + width + "/")
                 .replace(/=(?:s|w)\d+(?:-[^&#?]+)?(?=$|[&#?])/, "=w" + width);
@@ -5681,7 +5769,6 @@
             if (w400 && w700 && w1200 && !img.hasAttribute('srcset')) {
                 img.setAttribute('srcset', w400 + ' 400w, ' + w700 + ' 700w, ' + w1200 + ' 1200w');
                 img.setAttribute('sizes', '(max-width: 750px) calc(100vw - 40px), 700px');
-                if (!img.hasAttribute('data-original-src')) img.setAttribute('data-original-src', src);
             }
             const isPriorityImage = idx === 0 && isFullPostView;
             img.setAttribute('loading', isPriorityImage ? 'eager' : 'lazy');
@@ -5788,23 +5875,6 @@
 
         translateTagsIn(document);
 
-        function demoteAppendedCardImages(root) {
-            root.querySelectorAll('.featured-img-wrapper img').forEach(img => {
-                img.setAttribute('loading', 'lazy');
-                img.setAttribute('fetchpriority', 'low');
-            });
-        }
-
-        // Combined post-processor for the infinite-scroll IIFE.
-        window.__rinuanPostProcess = function(root, options) {
-            adjustPostTypography(root);
-            formatCardDates(root);
-            translateTagsIn(root);
-            if (options && options.appended) demoteAppendedCardImages(root);
-            // Appended card titles get the same punctuation-aware wrap as the initial page.
-            if (window.__rinuanWrapTitles) window.__rinuanWrapTitles(root);
-        };
-
         // Infinite scroll - multi-post views only.
         (function() {
             if (isFullPostView) return;
@@ -5825,18 +5895,22 @@
             const seen = new Set();
             list.querySelectorAll('.post-outer').forEach(p => { const k = keyOf(p); if (k) seen.add(k); });
 
-            const L = (zh, en) => '<span class="lang-zh">' + zh + '</span><span class="lang-en">' + en + '</span>';
+            const L = (simp, trad, en) => '<span class="lang-zh"><span class="variant-simp">' + simp + '</span><span class="variant-trad">' + trad + '</span></span><span class="lang-en">' + en + '</span>';
             const sentinel = document.createElement('div');
             sentinel.className = 'infinite-sentinel';
             const status = document.createElement('div');
             status.className = 'infinite-status';
+            status.setAttribute('role', 'status');
+            status.setAttribute('aria-live', 'polite');
+            status.setAttribute('aria-atomic', 'true');
             list.after(sentinel, status);
 
             const setStatus = html => { status.innerHTML = html; status.classList.add('is-visible'); };
+            const statusCopy = (simp, trad, en) => '<span class="status-copy">' + L(simp, trad, en) + '</span>';
             // aria-hidden keeps the decorative end mark silent. The end mark is the
             // list's closing line, so suppress the footer's own hairline (no double rule).
             const showEnd = () => {
-                setStatus('<span class="end-dingbat" aria-hidden="true">···</span>');
+                setStatus('<span class="end-dingbat" aria-hidden="true">···</span>' + statusCopy('已加载全部文章', '已載入全部文章', 'All posts loaded'));
                 document.documentElement.classList.add('posts-ended');
                 if (infiniteObserver) {
                     infiniteObserver.disconnect();
@@ -5844,7 +5918,7 @@
                 }
             };
             const showError = () => {
-                setStatus(L('加载出错', 'Couldn’t load') + '<button type="button" class="retry-btn">' + L('重试', 'Retry') + '</button>');
+                setStatus(L('加载出错', '載入出錯', 'Couldn’t load') + '<button type="button" class="retry-btn">' + L('重试', '重試', 'Retry') + '</button>');
                 status.querySelector('.retry-btn').addEventListener('click', () => { status.classList.remove('is-visible'); load(); });
             };
 
@@ -5857,7 +5931,7 @@
                     return;
                 }
                 loading = true;
-                setStatus('<span class="loading-dot"></span>');
+                setStatus('<span class="loading-dot" aria-hidden="true"></span>' + statusCopy('加载中', '載入中', 'Loading'));
                 fetch(nextUrl, { credentials: 'same-origin' })
                     .then(r => { if (!r.ok) throw 0; return r.text(); })
                     .then(html => {
@@ -5869,7 +5943,14 @@
                             if (k) seen.add(k);
                             tmp.appendChild(document.importNode(p, true));
                         });
-                        if (window.__rinuanPostProcess) window.__rinuanPostProcess(tmp, { appended: true });
+                        adjustPostTypography(tmp);
+                        formatCardDates(tmp);
+                        translateTagsIn(tmp);
+                        tmp.querySelectorAll('.featured-img-wrapper img').forEach(img => {
+                            img.setAttribute('loading', 'lazy');
+                            img.setAttribute('fetchpriority', 'low');
+                        });
+                        if (window.__rinuanWrapTitles) window.__rinuanWrapTitles(tmp);
                         const appendedPosts = [];
                         while (tmp.firstChild) {
                             const post = tmp.firstChild;
@@ -5882,7 +5963,8 @@
                         const older = doc.querySelector('.blog-pager a.older-link');
                         nextUrl = older ? older.getAttribute('href') : null;
                         loading = false;
-                        if (nextUrl) status.classList.remove('is-visible'); else { ended = true; showEnd(); }
+                        if (nextUrl) { status.classList.remove('is-visible'); status.replaceChildren(); }
+                        else { ended = true; showEnd(); }
                     })
                     .catch(() => { loading = false; showError(); });
             };
@@ -5924,14 +6006,17 @@
 
                 let formActionToken = 0;
                 let cancelPendingRelocation = null;
-                let pendingFocusIframe = null;
-                let pendingFocusHandler = null;
                 let setFormExpanded = null;
+                let mainToggleBusy = false;
+                let queuedMainToggle = false;
                 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                const coarsePointer = () => window.matchMedia('(pointer: coarse)').matches;
                 const beginFormAction = () => {
                     formActionToken++;
                     editorSettleVersion++;
+                    if (editorReloadPending) editorLoadToken = formActionToken;
+                    replyReloadPending = false;
+                    keepAvatarWindowMounted = false;
+                    customFormContainer.classList.remove("is-loading-mask");
                     customFormContainer.classList.remove("is-relocating");
                     customFormContainer.classList.remove("is-returning-main");
                     customFormContainer.style.transition = '';
@@ -5944,29 +6029,7 @@
                         cancelPendingRelocation();
                         cancelPendingRelocation = null;
                     }
-                    if (pendingFocusIframe && pendingFocusHandler) {
-                        pendingFocusIframe.removeEventListener("load", pendingFocusHandler);
-                    }
-                    pendingFocusIframe = null;
-                    pendingFocusHandler = null;
                     return formActionToken;
-                };
-                const focusCommentEditor = (iframe, token) => {
-                    if (token !== formActionToken || !iframe || !customFormContainer.classList.contains("is-expanded")) return;
-                    try { iframe.focus({ preventScroll: true }); }
-                    catch (e) { iframe.focus(); }
-                };
-                const queueEditorFocus = (iframe, token, waitForLoad) => {
-                    if (!iframe) return;
-                    requestAnimationFrame(() => focusCommentEditor(iframe, token));
-                    if (!waitForLoad || coarsePointer()) return;
-                    pendingFocusIframe = iframe;
-                    pendingFocusHandler = () => {
-                        pendingFocusIframe = null;
-                        pendingFocusHandler = null;
-                        focusCommentEditor(iframe, token);
-                    };
-                    iframe.addEventListener("load", pendingFocusHandler, { once: true });
                 };
                 const setReplyButtonState = (button, active) => {
                     if (!button) return;
@@ -5984,6 +6047,8 @@
                 // Preserve Blogger's tokenized editor URL and skin fragment.
                 let editorUrlParts = null;
                 let avatarWindow = null;
+                let avatarLowerWindow = null;
+                let editorLoadingMask = null;
                 let editorReloadPending = false;
                 let settledEditorHeight = 66;
                 let editorHeightObserver = null;
@@ -5992,14 +6057,27 @@
                 let editorState = customFormContainer.classList.contains("is-expanded") ? "opening" : "closed";
                 let finishEditorLoad = null;
                 let scheduleEditorSettle = null;
+                let scheduleEditorReveal = null;
                 let editorFrameLoaded = false;
                 let editorResizeConfirmed = false;
+                let replyReloadPending = false;
+                let keepAvatarWindowMounted = false;
                 const MIN_EDITOR_HEIGHT = 66;
+                // Signed-in is 195px; anonymous and profile views shift the slot at 244px.
+                const LOWER_AVATAR_EDITOR_HEIGHT = 220;
                 const MAX_EDITOR_HEIGHT = 640;
                 const BOOTSTRAP_EDITOR_HEIGHT = 250;
                 const currentEditorLocale = () => {
                     if (document.documentElement.getAttribute("data-lang") === "en") return "en";
                     return document.documentElement.getAttribute("data-variant") === "trad" ? "zh-TW" : "zh-CN";
+                };
+                const editorLoadingText = () => {
+                    const locale = currentEditorLocale();
+                    if (locale === "en") return "Loading";
+                    return locale === "zh-TW" ? "載入中" : "加载中";
+                };
+                const syncEditorLoadingText = () => {
+                    if (editorLoadingMask) editorLoadingMask.setAttribute('aria-label', editorLoadingText());
                 };
                 let editorLocale = currentEditorLocale();
                 let activeEditorParentId = null;
@@ -6015,7 +6093,7 @@
                 const setEditorState = (state, iframe) => {
                     editorState = state;
                     customFormContainer.dataset.editorState = state;
-                    const loading = state === "loading";
+                    const loading = state === "loading" || state === "settling";
                     customFormContainer.setAttribute("aria-busy", loading ? "true" : "false");
                     if (iframe) iframe.setAttribute("aria-busy", loading ? "true" : "false");
                     if (state === "closing" || state === "closed") {
@@ -6034,24 +6112,38 @@
                     customFormContainer.classList.toggle("is-expanded", expanded);
                     customFormContainer.setAttribute("aria-hidden", expanded ? "false" : "true");
                     if (expanded) {
+                        const settling = editorState === "settling";
                         customFormContainer.removeAttribute("inert");
-                        setEditorState(editorReloadPending ? "loading" : "opening", iframe);
+                        setEditorState(editorReloadPending ? "loading" : settling ? "settling" : "opening", iframe);
                         if (iframe) observeEditorHeight(iframe, false);
                         if (editorReloadPending) {
                             editorLoadToken = formActionToken;
-                            if (iframe && iframe.getAttribute("data-resized") === "true") {
+                            if (iframe && replyReloadPending && editorFrameLoaded) {
+                                finishEditorLoad(iframe);
+                            } else if (iframe && iframe.getAttribute("data-resized") === "true") {
                                 editorFrameLoaded = true;
                                 editorResizeConfirmed = true;
                                 scheduleEditorSettle(iframe);
                             }
                         }
-                        if (!editorReloadPending) setEditorState("ready", iframe);
+                        if (!editorReloadPending && !settling && reduceMotion()) {
+                            setEditorState("ready", iframe);
+                        }
+                        if (!editorReloadPending && !settling && !reduceMotion()) {
+                            requestAnimationFrame(() => {
+                                if (editorState === "opening" && !customFormContainer.getAnimations().length) {
+                                    setEditorState("ready", iframe);
+                                }
+                            });
+                        }
+                        if (settling && scheduleEditorReveal) scheduleEditorReveal(iframe, editorLoadToken);
                     } else {
                         customFormContainer.setAttribute("inert", "");
                         setEditorState("closing", iframe);
                         if (reduceMotion()) {
                             requestAnimationFrame(() => {
                                 if (!customFormContainer.classList.contains("is-expanded") && editorState === "closing") {
+                                    normalizeClosedEditorHeight(iframe);
                                     setEditorState("closed", iframe);
                                 }
                             });
@@ -6063,8 +6155,11 @@
                     if (event.target !== customFormContainer || event.propertyName !== "grid-template-rows") return;
                     if (customFormContainer.classList.contains("is-expanded")) {
                         customFormContainer.classList.remove("is-returning-main");
+                        if (editorState === "opening") setEditorState("ready", document.getElementById("comment-editor"));
                     } else if (editorState === "closing") {
-                        setEditorState("closed", document.getElementById("comment-editor"));
+                        const iframe = document.getElementById("comment-editor");
+                        normalizeClosedEditorHeight(iframe);
+                        setEditorState("closed", iframe);
                     }
                 });
                 const afterFormClosed = (token, callback) => {
@@ -6074,14 +6169,78 @@
                         });
                         return;
                     }
-                    const onEnd = event => {
-                        if (event.target !== customFormContainer || event.propertyName !== "grid-template-rows") return;
+                    let probeFrame = 0;
+                    let finished = false;
+                    const cleanup = () => {
                         customFormContainer.removeEventListener("transitionend", onEnd);
+                        if (probeFrame) cancelAnimationFrame(probeFrame);
+                        probeFrame = 0;
                         cancelPendingRelocation = null;
+                    };
+                    const finish = () => {
+                        if (finished) return;
+                        finished = true;
+                        cleanup();
                         if (token === formActionToken) callback();
                     };
+                    const onEnd = event => {
+                        if (event.target !== customFormContainer || event.propertyName !== "grid-template-rows") return;
+                        finish();
+                    };
                     customFormContainer.addEventListener("transitionend", onEnd);
-                    cancelPendingRelocation = () => customFormContainer.removeEventListener("transitionend", onEnd);
+                    probeFrame = requestAnimationFrame(() => {
+                        probeFrame = requestAnimationFrame(() => {
+                            probeFrame = 0;
+                            if (token !== formActionToken || customFormContainer.classList.contains("is-expanded")) return;
+                            const collapsedRow = parseFloat(getComputedStyle(customFormContainer).gridTemplateRows);
+                            if (Number.isFinite(collapsedRow) && collapsedRow <= 2.5) finish();
+                        });
+                    });
+                    cancelPendingRelocation = () => {
+                        finished = true;
+                        cleanup();
+                    };
+                };
+                const afterFormOpened = (token, callback) => {
+                    if (reduceMotion()) {
+                        requestAnimationFrame(() => {
+                            if (token === formActionToken &&
+                                customFormContainer.classList.contains("is-expanded")) callback();
+                        });
+                        return;
+                    }
+                    let probeFrame = 0;
+                    let finished = false;
+                    const cleanup = () => {
+                        customFormContainer.removeEventListener("transitionend", onEnd);
+                        if (probeFrame) cancelAnimationFrame(probeFrame);
+                        probeFrame = 0;
+                        cancelPendingRelocation = null;
+                    };
+                    const finish = () => {
+                        if (finished) return;
+                        finished = true;
+                        cleanup();
+                        if (token === formActionToken) callback();
+                    };
+                    const onEnd = event => {
+                        if (event.target !== customFormContainer ||
+                            event.propertyName !== "grid-template-rows" ||
+                            !customFormContainer.classList.contains("is-expanded")) return;
+                        finish();
+                    };
+                    customFormContainer.addEventListener("transitionend", onEnd);
+                    probeFrame = requestAnimationFrame(() => {
+                        probeFrame = 0;
+                        if (token !== formActionToken ||
+                            !customFormContainer.classList.contains("is-expanded")) return;
+                        // If no transition was created, the expanded state is already final.
+                        if (!customFormContainer.getAnimations().length) finish();
+                    });
+                    cancelPendingRelocation = () => {
+                        finished = true;
+                        cleanup();
+                    };
                 };
                 const applyEditorHeight = (iframe, value, force) => {
                     if (editorReloadPending && !force) return;
@@ -6090,21 +6249,32 @@
                     // Blogger reports its generic 250px iframe default as "resized"
                     // before the mobile editor publishes its real compact height.
                     // Never promote that navigation bootstrap value to layout state.
-                    if (editorReloadPending && parsed === BOOTSTRAP_EDITOR_HEIGHT &&
+                    if (parsed === BOOTSTRAP_EDITOR_HEIGHT &&
                         settledEditorHeight !== BOOTSTRAP_EDITOR_HEIGHT) return;
                     settledEditorHeight = parsed;
                     const formInner = customFormContainer.querySelector('.form-inner');
-                    if (formInner) formInner.style.setProperty('--comment-editor-height', parsed + 'px');
-                };
-                const primeCompactEditorBeforeOpen = iframe => {
-                    if (!iframe || editorReloadPending) return;
-                    settledEditorHeight = MIN_EDITOR_HEIGHT;
-                    const formInner = customFormContainer.querySelector('.form-inner');
                     if (formInner) {
-                        formInner.style.setProperty('--comment-editor-height', MIN_EDITOR_HEIGHT + 'px');
+                        formInner.style.setProperty('--comment-editor-height', parsed + 'px');
                     }
-                    iframe.setAttribute("height", String(MIN_EDITOR_HEIGHT));
+                    if (avatarWindow) {
+                        avatarWindow.dataset.avatarLayout =
+                            parsed >= LOWER_AVATAR_EDITOR_HEIGHT ? 'lower' : 'upper';
+                    }
+                    if (avatarLowerWindow) {
+                        avatarLowerWindow.dataset.avatarLayout =
+                            parsed >= LOWER_AVATAR_EDITOR_HEIGHT ? 'lower' : 'upper';
+                        avatarLowerWindow.hidden = !avatarWindow || avatarWindow.hidden ||
+                            parsed < LOWER_AVATAR_EDITOR_HEIGHT;
+                    }
                 };
+                function normalizeClosedEditorHeight(iframe) {
+                    if (!iframe || customFormContainer.classList.contains("is-expanded")) return;
+                    // Blogger always restores its compact editor when a hidden top form
+                    // becomes visible. Commit that baseline only after the close finishes,
+                    // so the next open cannot paint the stale expanded height first.
+                    applyEditorHeight(iframe, MIN_EDITOR_HEIGHT, true);
+                    iframe.setAttribute("height", MIN_EDITOR_HEIGHT + "px");
+                }
                 function observeEditorHeight(iframe, adoptCurrent = true) {
                     if (editorHeightObserver) editorHeightObserver.disconnect();
                     if (adoptCurrent) applyEditorHeight(iframe, iframe.getAttribute("height") || settledEditorHeight);
@@ -6137,41 +6307,50 @@
                         attributeFilter: ["height", "data-resized"]
                     });
                 }
-                const prepareEditorReload = iframe => {
-                    // A new editor URL starts a new layout lifecycle. Do not carry a
-                    // previous expanded/bootstrap height into another reply target.
+                const prepareEditorReload = (iframe, replyReload = false,
+                                             preserveAvatarLayer = replyReload) => {
+                    // Reply navigation keeps the confirmed geometry and compositor layer;
+                    // identity and locale navigation still starts from a clean baseline.
                     editorSettleVersion++;
                     editorLoadToken = formActionToken;
                     editorReloadPending = true;
+                    replyReloadPending = replyReload;
+                    keepAvatarWindowMounted = preserveAvatarLayer;
                     editorFrameLoaded = false;
                     editorResizeConfirmed = false;
-                    settledEditorHeight = MIN_EDITOR_HEIGHT;
-                    const formInner = customFormContainer.querySelector('.form-inner');
-                    if (formInner) {
-                        formInner.style.setProperty('--comment-editor-height', MIN_EDITOR_HEIGHT + 'px');
+                    if (!replyReload) {
+                        settledEditorHeight = MIN_EDITOR_HEIGHT;
+                        const formInner = customFormContainer.querySelector('.form-inner');
+                        if (formInner) {
+                            formInner.style.setProperty('--comment-editor-height', MIN_EDITOR_HEIGHT + 'px');
+                        }
+                        iframe.setAttribute("height", "66");
                     }
-                    iframe.setAttribute("height", "66");
                     iframe.removeAttribute("data-resized");
                     setEditorLoading(iframe, true);
-                    if (avatarWindow && !avatarWindow.classList.contains("has-static-avatar")) {
-                        avatarWindow.classList.remove("is-ready");
-                    }
+                    if (avatarWindow && !keepAvatarWindowMounted) avatarWindow.hidden = true;
+                    if (avatarLowerWindow && !keepAvatarWindowMounted) avatarLowerWindow.hidden = true;
                 };
-                const detachEditorForReload = iframe => {
+                const detachEditorForReload = (iframe, replyReload = false,
+                                                preserveAvatarLayer = replyReload) => {
                     if (!iframe) return;
                     // Freeze the last settled size before removing src. The transient
                     // about:blank document otherwise restores Blogger's 250px default,
                     // which the height observer can mistake for a real editor resize.
                     captureEditorUrl(iframe);
-                    prepareEditorReload(iframe);
+                    prepareEditorReload(iframe, replyReload, preserveAvatarLayer);
                     customFormContainer.classList.add("is-relocating");
                     iframe.removeAttribute('src');
                     syncAvatarWindow(iframe);
                 };
                 finishEditorLoad = iframe => {
-                    if (!editorFrameLoaded || !editorResizeConfirmed || editorLoadToken !== formActionToken ||
+                    if (!editorReloadPending || !editorFrameLoaded ||
+                        (!editorResizeConfirmed && !replyReloadPending) ||
+                        editorLoadToken !== formActionToken ||
                         editorState === "closing" || editorState === "closed") return;
-                    const measuredHeight = Math.ceil(parseFloat(iframe.getAttribute("height")));
+                    const atomicReplyReveal = replyReloadPending;
+                    const measuredHeight = replyReloadPending && !editorResizeConfirmed ? settledEditorHeight :
+                        Math.ceil(parseFloat(iframe.getAttribute("height")));
                     if (!Number.isFinite(measuredHeight) || measuredHeight < MIN_EDITOR_HEIGHT ||
                         measuredHeight > MAX_EDITOR_HEIGHT) return;
                     if (measuredHeight === BOOTSTRAP_EDITOR_HEIGHT &&
@@ -6179,8 +6358,14 @@
                     // Blogger also writes a temporary style.height=250px during every
                     // navigation. Only its height attribute is part of the resize protocol.
                     applyEditorHeight(iframe, measuredHeight || settledEditorHeight, true);
+                    if (atomicReplyReveal) iframe.style.setProperty("transition", "none");
                     editorReloadPending = false;
-                    setEditorLoading(iframe, false);
+                    replyReloadPending = false;
+                    setEditorState("settling", iframe);
+                    syncAvatarWindow(iframe);
+                    restoreEditorVisibility(iframe, editorLoadToken);
+                    keepAvatarWindowMounted = false;
+                    scheduleEditorReveal(iframe, editorLoadToken);
                 };
                 scheduleEditorSettle = iframe => {
                     const version = ++editorSettleVersion;
@@ -6191,8 +6376,28 @@
                         if (version === editorSettleVersion) finishEditorLoad(iframe);
                     }));
                 };
+                scheduleEditorReveal = (iframe, token) => {
+                    // Keep the mask through two complete relocated compositor paints.
+                    requestAnimationFrame(() => requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            if (!iframe || token !== formActionToken || editorState !== "settling" ||
+                                !customFormContainer.classList.contains("is-expanded")) return;
+                            setEditorLoading(iframe, false);
+                            customFormContainer.classList.remove("is-loading-mask");
+                            iframe.style.removeProperty("transition");
+                        });
+                    }));
+                };
                 const syncAvatarWindow = iframe => {
-                    if (avatarWindow) avatarWindow.hidden = !iframe || !iframe.getAttribute("src");
+                    const missing = !iframe || !iframe.getAttribute("src");
+                    const hidden = !keepAvatarWindowMounted && (missing || editorReloadPending);
+                    if (avatarWindow) {
+                        avatarWindow.hidden = hidden;
+                    }
+                    if (avatarLowerWindow) {
+                        avatarLowerWindow.hidden = hidden ||
+                            avatarLowerWindow.dataset.avatarLayout !== 'lower';
+                    }
                 };
                 const placeEditorInForm = (iframe, formInner) => {
                     if (!iframe || !formInner) return;
@@ -6206,17 +6411,8 @@
                     }
                 };
                 const restoreEditorVisibility = (iframe, token) => {
-                    if (!iframe) return;
+                    if (!iframe || token !== formActionToken || editorReloadPending) return;
                     customFormContainer.classList.remove("is-relocating");
-                    // Match the CSS opacity leg for one frame, then return all transition
-                    // ownership to the stylesheet (height and theme included).
-                    iframe.style.transition = 'opacity 0.22s ease-out';
-                    iframe.style.opacity = '';
-                    requestAnimationFrame(() => {
-                        if (token !== formActionToken) return;
-                        iframe.style.removeProperty("transition");
-                        iframe.style.removeProperty("opacity");
-                    });
                 };
                 const captureEditorUrl = iframe => {
                     if (editorUrlParts || !iframe) return;
@@ -6230,8 +6426,8 @@
                     const mobileSrc = editorUrlParts[0] +
                                       (activeEditorParentId ? "&parentID=" + activeEditorParentId : "") +
                                       (editorUrlParts[1] ? "#" + editorUrlParts[1] : "");
-                    // One intentional initial reload selects Blogger's mobile renderer;
-                    // later relocations reuse this URL and preserve typed text when equal.
+                    // The template selects the mobile renderer and locale before Blogger's
+                    // first request; this only repairs stale or legacy markup when needed.
                     if (iframe.src !== mobileSrc) {
                         prepareEditorReload(iframe);
                         iframe.src = mobileSrc;
@@ -6245,11 +6441,12 @@
                     const nextLocale = currentEditorLocale();
                     const localizedBase = new URL(editorUrlParts[0]);
                     localizedBase.searchParams.set("hl", nextLocale);
+                    parentId = nextParentId ? encodeURIComponent(nextParentId) : null;
                     const src = localizedBase.href + (parentId ? "&parentID=" + parentId : "") +
                                 (editorUrlParts[1] ? "#" + editorUrlParts[1] : "");
                     // Skip when already current - reloading the editor drops typed text.
                     if (iframe.src !== src) {
-                        prepareEditorReload(iframe);
+                        if (!editorReloadPending) prepareEditorReload(iframe);
                         iframe.src = src;
                     }
                     activeEditorParentId = nextParentId;
@@ -6259,6 +6456,7 @@
                 const syncEditorLocale = () => {
                     const iframe = document.getElementById("comment-editor");
                     if (!iframe) return;
+                    syncEditorLoadingText();
                     setEditorSrc(iframe, activeEditorParentId);
                 };
                 document.addEventListener("rinuan:locale-change", syncEditorLocale);
@@ -6289,6 +6487,15 @@
                         formInner.className = 'form-inner';
                         customFormContainer.appendChild(formInner);
                     }
+                    editorLoadingMask = formInner.querySelector('.comment-editor-loading');
+                    if (!editorLoadingMask) {
+                        editorLoadingMask = document.createElement('span');
+                        editorLoadingMask.className = 'comment-editor-loading';
+                        editorLoadingMask.setAttribute('role', 'status');
+                        editorLoadingMask.setAttribute('aria-live', 'polite');
+                        formInner.appendChild(editorLoadingMask);
+                    }
+                    syncEditorLoadingText();
                     // Establish the loading state before observing attributes. Otherwise
                     // the observer's first read can promote Blogger's 250px bootstrap
                     // height to the stable outer size before the real editor is ready.
@@ -6311,39 +6518,30 @@
                         avatarWindow.className = 'comment-avatar-window';
                         avatarWindow.setAttribute('aria-hidden', 'true');
                         avatarWindow.setAttribute('inert', '');
+                        avatarWindow.hidden = true;
                         formInner.appendChild(avatarWindow);
                     }
-                    if (!avatarWindow.classList.contains('has-static-avatar')) {
-                        const adminControl = document.querySelector('.comments .comment .item-control.blog-admin');
-                        const adminComment = adminControl && adminControl.closest('.comment');
-                        const adminAvatar = adminComment && adminComment.querySelector('.avatar-image-container img');
-                        const adminAvatarSrc = adminAvatar && (adminAvatar.currentSrc || adminAvatar.getAttribute('src'));
-                        if (adminAvatarSrc) {
-                            const staticAvatar = document.createElement('img');
-                            staticAvatar.className = 'comment-avatar-static';
-                            staticAvatar.alt = '';
-                            staticAvatar.setAttribute('aria-hidden', 'true');
-                            staticAvatar.setAttribute('draggable', 'false');
-                            staticAvatar.decoding = 'async';
-                            staticAvatar.src = adminAvatarSrc;
-                            avatarWindow.appendChild(staticAvatar);
-                            avatarWindow.classList.add('has-static-avatar');
-                        }
+                    avatarWindow.dataset.avatarLayout =
+                        settledEditorHeight >= LOWER_AVATAR_EDITOR_HEIGHT ? 'lower' : 'upper';
+                    avatarLowerWindow = formInner.querySelector('.comment-avatar-window-lower');
+                    if (!avatarLowerWindow) {
+                        avatarLowerWindow = document.createElement('span');
+                        avatarLowerWindow.className = 'comment-avatar-window comment-avatar-window-lower';
+                        avatarLowerWindow.setAttribute('aria-hidden', 'true');
+                        avatarLowerWindow.setAttribute('inert', '');
+                        avatarLowerWindow.hidden = true;
+                        formInner.appendChild(avatarLowerWindow);
                     }
-                    const markAvatarReady = () => {
+                    avatarLowerWindow.dataset.avatarLayout =
+                        settledEditorHeight >= LOWER_AVATAR_EDITOR_HEIGHT ? 'lower' : 'upper';
+                    const markEditorFrameReady = () => {
                         editorFrameLoaded = true;
                         editorResizeConfirmed = editorIframe.getAttribute("data-resized") === "true";
-                        requestAnimationFrame(() => {
-                            if (avatarWindow && editorIframe.getAttribute("src")) {
-                                avatarWindow.classList.add("is-ready");
-                            }
-                            requestAnimationFrame(() => {
-                                if (editorResizeConfirmed) scheduleEditorSettle(editorIframe);
-                            });
-                        });
+                        if (replyReloadPending) finishEditorLoad(editorIframe);
+                        else if (editorResizeConfirmed) scheduleEditorSettle(editorIframe);
                     };
-                    editorIframe.addEventListener("load", markAvatarReady);
-                    if (editorIframe.getAttribute("data-resized") === "true") markAvatarReady();
+                    editorIframe.addEventListener("load", markEditorFrameReady);
+                    if (editorIframe.getAttribute("data-resized") === "true") markEditorFrameReady();
                     else {
                         setEditorLoading(editorIframe, editorReloadPending);
                     }
@@ -6370,12 +6568,24 @@
                 if (commentToggleBtn) {
                     commentToggleBtn.addEventListener("click", e => {
                         e.preventDefault();
+                        if (mainToggleBusy) {
+                            // Preserve the user's final intent without reversing a grid
+                            // transition halfway through its computed height.
+                            queuedMainToggle = !queuedMainToggle;
+                            return;
+                        }
+                        mainToggleBusy = true;
                         const actionToken = beginFormAction();
+                        const finishMainToggle = () => {
+                            mainToggleBusy = false;
+                            if (!queuedMainToggle) return;
+                            queuedMainToggle = false;
+                            commentToggleBtn.click();
+                        };
                         userToggled = true;
                         customFormContainer.classList.remove("is-reserved");
                         const editorIframe = document.getElementById("comment-editor");
                         const isExpanded = commentsWrapper.classList.contains("show-main-form");
-
                         // Reset any active inline reply buttons
                         commentsWrapper.querySelectorAll(".comment-reply.cancel-active").forEach(btn => {
                             setReplyButtonState(btn, false);
@@ -6385,6 +6595,7 @@
                             commentsWrapper.classList.remove("show-main-form");
                             setMainFormState(false);
                             setFormExpanded(false);
+                            afterFormClosed(actionToken, finishMainToggle);
                         } else {
                             // Returning from reply mode.
                             const mainComments = document.getElementById("comments");
@@ -6393,13 +6604,18 @@
                             // nextElementSibling: whitespace text nodes between tags must not defeat the check.
                             const alreadyAtTop = customFormContainer.parentNode === commentsWrapper &&
                                                  customFormContainer.nextElementSibling === mainComments;
-
                             const relocateAndExpand = () => {
                                 if (actionToken !== formActionToken) return;
+                                // The old editor closes normally. Cover only the new
+                                // location, before it can produce its first visible frame.
+                                if (!alreadyAtTop) customFormContainer.classList.add("is-loading-mask");
                                 if (!alreadyAtTop) customFormContainer.classList.add("is-returning-main");
                                 if (mainComments && !alreadyAtTop) {
                                     if (editorIframe) {
-                                        detachEditorForReload(editorIframe);
+                                        // Preserve the already-composited correction window.
+                                        // Recreating its backdrop-filter after reveal leaves
+                                        // the inverted avatar exposed for one compositor frame.
+                                        detachEditorForReload(editorIframe, false, true);
                                     }
                                     commentsWrapper.insertBefore(customFormContainer, mainComments);
                                 }
@@ -6408,23 +6624,24 @@
                                 commentsWrapper.classList.add("show-main-form");
                                 setMainFormState(true);
                                 customFormContainer.style.transition = '';
-                                primeCompactEditorBeforeOpen(editorIframe);
                                 const expandMainForm = () => {
                                     if (actionToken !== formActionToken) return;
                                     setFormExpanded(true);
-                                    if (editorIframe) {
-                                        if (!alreadyAtTop) {
-                                            restoreEditorVisibility(editorIframe, actionToken);
-                                            queueEditorFocus(editorIframe, actionToken, true);
-                                        }
-                                    }
+                                    afterFormOpened(actionToken, finishMainToggle);
                                 };
-                                requestAnimationFrame(() => {
-                                    if (actionToken !== formActionToken) return;
-                                    // A moved form needs one painted collapsed frame at its new position.
-                                    if (!alreadyAtTop) requestAnimationFrame(expandMainForm);
-                                    else expandMainForm();
-                                });
+                                if (alreadyAtTop) {
+                                    // Keep the last visible, confirmed geometry. Adopting the
+                                    // hidden iframe's temporary 66px value here caused a
+                                    // 195px -> 66px -> 195px jump on every reopen.
+                                    if (editorIframe) applyEditorHeight(editorIframe, settledEditorHeight, true);
+                                    expandMainForm();
+                                } else {
+                                    requestAnimationFrame(() => {
+                                        if (actionToken !== formActionToken) return;
+                                        // A moved form needs one painted collapsed frame at its new position.
+                                        requestAnimationFrame(expandMainForm);
+                                    });
+                                }
                             };
 
                             if (wasExpanded && !alreadyAtTop) {
@@ -6438,90 +6655,97 @@
                     });
                 }
 
-                // Reply-button delegation: relocate the shared iframe under the clicked comment.
+                // Reply-button delegation: close first, then relocate the shared iframe.
                 document.body.addEventListener("click", e => {
                     const replyBtn = e.target.closest(".comment-reply");
                     if (!replyBtn) return;
                     e.preventDefault();
-                    const actionToken = beginFormAction();
+                    // Blogger also binds these data-comment-id links. Stop its target
+                    // handler so only this theme's shared main editor handles the reply.
+                    e.stopPropagation();
 
-                    const isCancel = replyBtn.classList.contains("cancel-active");
+                    // Cancelling a reply is exactly the existing "write a comment" return
+                    // path: collapse, restore the compact top geometry, relocate, then open.
+                    if (replyBtn.classList.contains("cancel-active") && commentToggleBtn) {
+                        commentToggleBtn.click();
+                        return;
+                    }
+
+                    // A reply supersedes any in-flight main-toggle transition and queue.
+                    mainToggleBusy = false;
+                    queuedMainToggle = false;
+                    const actionToken = beginFormAction();
                     const iframe = document.getElementById("comment-editor");
                     const formInner = customFormContainer.querySelector('.form-inner');
-                    const anchorComment = replyBtn.closest(".comment");
-                    const anchorTop = anchorComment ? anchorComment.getBoundingClientRect().top : null;
-
-                    // Snap-hide iframe during relocation to avoid flicker. Dropping src
-                    // first is the stock onReply move: the DOM move reloads the iframe,
-                    // so don't let it re-fetch the outgoing URL only to swap it below.
-                    // removeAttribute, not src='': an empty src resolves to the page's own
-                    // URL and would load the blog inside the box during relocation.
-                    if (iframe) {
-                        detachEditorForReload(iframe);
-                    }
-                    if (customFormContainer) {
-                        customFormContainer.style.transition = 'none';
-                        customFormContainer.classList.remove("is-reserved");
-                        setFormExpanded(false);
-                    }
+                    const itemControl = replyBtn.closest(".item-control");
+                    const moveParent = itemControl && itemControl.parentNode;
+                    const moveTarget = itemControl && itemControl.nextSibling;
+                    const canPreserveFrame = moveParent && typeof moveParent.moveBefore === "function";
+                    const wasExpanded = customFormContainer.classList.contains("is-expanded");
+                    const parentComment = replyBtn.closest(".comment");
+                    const parentId = parentComment && parentComment.id ?
+                        parentComment.id.replace(/^c/, "") : null;
+                    let replyNavigationStarted = false;
 
                     // Clear any other active reply buttons synchronously so rapid clicks
                     // cannot leave a stale delayed relocation behind.
                     commentsWrapper.querySelectorAll(".comment-reply.cancel-active").forEach(btn => {
                         if (btn !== replyBtn) setReplyButtonState(btn, false);
                     });
+                    setReplyButtonState(replyBtn, true);
+                    commentsWrapper.classList.remove("show-main-form");
+                    setMainFormState("replying");
 
-                    if (isCancel) {
-                        // Cancel reply -> return form to top
-                        setReplyButtonState(replyBtn, false);
-                        const mainComments = document.getElementById("comments");
-                        if (mainComments && formInner && iframe) {
-                            placeEditorInForm(iframe, formInner);
-                            commentsWrapper.insertBefore(customFormContainer, mainComments);
-                            setEditorSrc(iframe, null);
-                        }
-                        commentsWrapper.classList.add("show-main-form");
-                        setMainFormState(true);
-                    } else {
-                        setReplyButtonState(replyBtn, true);
-                        commentsWrapper.classList.remove("show-main-form");
-                        setMainFormState("replying");
-
-                        const itemControl = replyBtn.closest(".item-control");
-                        if (itemControl && formInner && iframe) {
-                            itemControl.insertAdjacentElement('afterend', customFormContainer);
-                            placeEditorInForm(iframe, formInner);
-                            // Stock threading: the frame needs the parent comment's id
-                            // (li.comment id="c<number>") or the reply posts top-level.
-                            const parentComment = replyBtn.closest(".comment");
-                            const parentId = parentComment && parentComment.id ?
-                                parentComment.id.replace(/^c/, "") : null;
-                            setEditorSrc(iframe, parentId);
-                        }
+                    // Start Blogger's parentID navigation while the old location is
+                    // collapsing. moveBefore preserves that in-flight iframe request.
+                    if (iframe && canPreserveFrame) {
+                        prepareEditorReload(iframe, true);
+                        customFormContainer.classList.add("is-relocating");
+                        setEditorSrc(iframe, parentId);
+                        replyNavigationStarted = true;
                     }
 
-                    // Open immediately from the compact baseline; Blogger may grow the
-                    // frame later if the signed-in editor genuinely needs it.
-                    requestAnimationFrame(() => {
+                    const relocateAndExpand = () => {
                         if (actionToken !== formActionToken) return;
+                        // Do not cover the closing editor. Mount the mask while collapsed
+                        // at its destination so it owns the first expanded paint.
+                        customFormContainer.classList.add("is-loading-mask");
+                        if (iframe) {
+                            if (canPreserveFrame && !replyNavigationStarted) {
+                                prepareEditorReload(iframe, true);
+                                customFormContainer.classList.add("is-relocating");
+                            } else if (!canPreserveFrame) {
+                                detachEditorForReload(iframe, true);
+                            }
+                        }
+                        customFormContainer.classList.remove("is-reserved");
+
+                        if (itemControl && formInner && iframe) {
+                            if (canPreserveFrame) moveParent.moveBefore(customFormContainer, moveTarget);
+                            else itemControl.insertAdjacentElement('afterend', customFormContainer);
+                            placeEditorInForm(iframe, formInner);
+                            if (!replyNavigationStarted) setEditorSrc(iframe, parentId);
+                        }
+
                         requestAnimationFrame(() => {
                             if (actionToken !== formActionToken) return;
-                            customFormContainer.style.transition = '';
-                            setFormExpanded(true);
-                            if (iframe) {
-                                restoreEditorVisibility(iframe, actionToken);
-                                requestAnimationFrame(() => {
-                                    if (actionToken !== formActionToken) return;
-                                    if (anchorComment && anchorTop !== null) {
-                                        const delta = anchorComment.getBoundingClientRect().top - anchorTop;
-                                        if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
-                                    }
-                                    queueEditorFocus(iframe, actionToken, true);
-                                });
-                            }
+                            // Match the main toggle: paint one collapsed frame at the new
+                            // position before the grid expansion becomes visible.
+                            requestAnimationFrame(() => {
+                                if (actionToken !== formActionToken) return;
+                                customFormContainer.style.transition = '';
+                                setFormExpanded(true);
+                            });
                         });
-                    });
-                });
+                    };
+
+                    if (wasExpanded) {
+                        setFormExpanded(false);
+                        afterFormClosed(actionToken, relocateAndExpand);
+                    } else {
+                        relocateAndExpand();
+                    }
+                }, true);
             }
 
             const COMMENT_DATE_FORMATTERS = {
@@ -6638,8 +6862,10 @@
 
                 // Keep one reply button per comment.
                 commentScope.querySelectorAll(".comment:not([data-cleaned])").forEach(comment => {
-                    const controls = comment.querySelector(".item-control");
-                    const replyBtns = comment.querySelectorAll(".comment-reply");
+                    const controls = Array.from(comment.querySelectorAll(".item-control"))
+                        .find(control => control.closest(".comment") === comment);
+                    const replyBtns = Array.from(comment.querySelectorAll(".comment-reply"))
+                        .filter(button => button.closest(".comment") === comment);
                     if (controls && replyBtns.length) {
                         controls.appendChild(replyBtns[0]);
                         replyBtns[0].style.display = "inline-flex";

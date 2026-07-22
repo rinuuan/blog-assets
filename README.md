@@ -20,18 +20,17 @@
 
 ```text
 .
-├── theme.xml                         # 可读、可编辑的主题源文件
-├── theme.min.xml                     # 供 Blogger 上传的精简版主题
-├── minify.py                         # 精简版生成与 XML 校验脚本
-├── README.md                         # 项目说明
+├── theme.xml                         # Editable theme source
+├── theme.min.xml                     # Minified Blogger upload
+├── minify.py                         # Build and validation script
+├── README.md                         # Project guide
 └── mascot/
-    ├── README.md                     # 看板娘素材说明
-    ├── CLAUDE_INTEGRATION_PROMPT.md  # 素材集成参考提示词
-    ├── blog-mascot.png               # 原始角色插画
-    ├── chibi/                         # 网页版角色与探头素材
-    ├── emotions/                      # 网页版表情素材
-    ├── chibi-hd/                      # 高分辨率角色素材
-    └── emotions-hd/                   # 高分辨率表情素材
+    ├── README.md                     # Mascot asset guide
+    ├── blog-mascot.png               # Original character art
+    ├── chibi/                         # Web character assets
+    ├── emotions/                      # Web expression assets
+    ├── chibi-hd/                      # High-resolution characters
+    └── emotions-hd/                   # High-resolution expressions
 ```
 
 ## 安装
@@ -50,10 +49,11 @@
 
 ```bash
 python3 -m pip install rjsmin rcssmin
+# Node.js must also be available as `node`, or set NODE_BINARY=/path/to/node.
 python3 minify.py
 ```
 
-脚本会精简主题中的 CSS、JavaScript、注释和多余空白，不会重命名变量，并在写入后自动验证 XML。请勿直接编辑 `theme.min.xml`；每次修改主题后都应重新运行脚本。
+脚本会精简主题中的 CSS、JavaScript、注释和多余空白，不会重命名变量。生成物会在原子写入前完成 XML、DOM 字面 ID、最终基础 CSS 合同、本地看板娘资源与尺寸、样式回归、简明英文注释、全部 CDATA 脚本和 Blogger 模板内联脚本检查。请勿直接编辑 `theme.min.xml`；每次修改主题后都应重新运行脚本。
 
 ## 配置
 
@@ -102,7 +102,7 @@ https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi
 
 ## 外部依赖
 
-主题在浏览器中运行时不需要构建工具；仅生成 `theme.min.xml` 时需要 Python 3、`rjsmin` 和 `rcssmin`。运行时会使用以下外部服务：
+主题在浏览器中运行时不需要构建工具；仅生成 `theme.min.xml` 时需要 Python 3、Node.js、`rjsmin` 和 `rcssmin`。若 `node` 不在 `PATH`，可设置 `NODE_BINARY=/path/to/node`。运行时会使用以下外部服务：
 
 - Blogger 模板与评论系统
 - Google Fonts
@@ -114,7 +114,9 @@ https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi
 ## 发布前检查
 
 - 确认 XML 能由 Blogger 正常上传并保存
-- 确认 `theme.min.xml` 已由最新的 `theme.xml` 重新生成
+- 运行 `python3 minify.py`，确认 `theme.min.xml` 已由最新的 `theme.xml` 重新生成
+- 确认脚本输出包含 `DOM ids valid`、`CSS contracts valid`、`Local mascot assets valid`、`Mascot dimensions valid` 和 `Theme regression checks valid`
+- 确认脚本输出包含 `JS valid`
 - 替换默认分享封面和页脚社交链接
 - 分别检查中文、英文、简体和繁体显示
 - 检查浅色、深色及移动端布局

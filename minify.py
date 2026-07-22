@@ -308,6 +308,14 @@ THEME_REGRESSION_CHECKS = (
         "comment form child min-height must not snap during grid expansion",
     ),
     (
+        re.compile(r"applyEditorHeight\(editorIframe,\s*editorIframe\.getAttribute\(\"height\"\)", re.I),
+        "main comment reopen must not adopt the iframe height written while hidden",
+    ),
+    (
+        re.compile(r"\b(?:restoreExpandedEditor|focusCommentEditor|queueEditorFocus)\b|window\.scrollBy\(", re.I),
+        "comment form relocation must not focus the outer iframe or add scroll compensation",
+    ),
+    (
         re.compile(r"@keyframes\s+comment-editor-theme-", re.I),
         "comment editor opacity keyframes break cross-frame blend compositing during theme changes",
     ),
@@ -316,8 +324,72 @@ THEME_REGRESSION_CHECKS = (
         "comment editor must not reintroduce delayed theme/load timer orchestration",
     ),
     (
+        re.compile(r"\b(?:EDITOR_POINTER_PASS_MS|editorPointerRelockTimer)\b", re.I),
+        "comment editor identity switching must not depend on a short click-through timer",
+    ),
+    (
+        re.compile(r"comment-editor-dark", re.I),
+        "comment editor must not apply an unsupported SVG filter to the iframe",
+    ),
+    (
+        re.compile(r"\b(?:primeEditorAvatar|editorAvatarPreload)\b", re.I),
+        "comment editor must not guess or preload another user's avatar",
+    ),
+    (
+        re.compile(r"\b(?:avatarCover|primeCompactEditorBeforeOpen|editorExpansionSettled|revealEditorAvatar)\b|\.comment-avatar-cover", re.I),
+        "comment avatar rendering must not restore the delayed cover lifecycle",
+    ),
+    (
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*background-color:\s*var\(--avatar-placeholder\)", re.I | re.S),
+        "loading avatar cover must not render as a visible blank circle",
+    ),
+    (
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*transition:\s*background-color", re.I | re.S),
+        "reply reload cover must not fade in after the iframe has already changed",
+    ),
+    (
+        re.compile(r"\.form-inner::before", re.I),
+        "comment form must not create a second avatar-shaped theme layer",
+    ),
+    (
+        re.compile(r"\.form-inner\s*\{[^}]*contain:\s*paint", re.I | re.S),
+        "collapsed editors must not discard the iframe and avatar compositor surfaces",
+    ),
+    (
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*clip-path", re.I | re.S),
+        "comment avatar correction must not add a second antialiased circular edge",
+    ),
+    (
+        re.compile(r"\.comment-avatar-window-lower\[data-avatar-layout=\"lower\"\]:not\(\[hidden\]\)\s*\{[^}]*filter:\s*none", re.I | re.S),
+        "lower avatar correction must retain profile-chrome presence detection",
+    ),
+    (
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*will-change:\s*(?:filter|backdrop-filter)", re.I | re.S),
+        "avatar correction must not pre-rasterize stale iframe pixels",
+    ),
+    (
+        re.compile(r"\.top-actions\s*\{[^}]*(?:-webkit-)?backdrop-filter", re.I | re.S),
+        "top controls must not rebuild a backdrop-filter layer during theme changes",
+    ),
+    (
+        re.compile(r"--comment-avatar-top", re.I),
+        "the upper avatar probe must stay fixed while Blogger changes editor height",
+    ),
+    (
+        re.compile(r"\b(?:has-static-avatar|comment-avatar-static|adminAvatar)\b", re.I),
+        "comment editor avatar must come from the active Blogger iframe, not a copied author avatar",
+    ),
+    (
+        re.compile(r"#custom-comment-form-container(?:\.[^{\s]+)?\s*\{[^}]*\bopacity\s*:", re.I | re.S),
+        "comment form opacity grouping breaks iframe blend compositing while opening",
+    ),
+    (
         re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?mix-blend-mode\s*:\s*difference", re.I),
         "difference blending destroys comment contrast and avatar restoration",
+    ),
+    (
+        re.compile(r"\.comment-avatar-window\.is-ready\s*\{[^}]*mix-blend-mode\s*:\s*color-dodge", re.I | re.S),
+        "color-dodge recolours the signed-in avatar in light mode",
     ),
     (
         re.compile(r"letter-spacing\s*:\s*-\d", re.I),
@@ -370,40 +442,48 @@ THEME_REGRESSION_CHECKS = (
 )
 THEME_REQUIRED_CHECKS = (
     (
-        re.compile(r"#custom-comment-form-container\.is-returning-main\s*\{[^}]*grid-template-rows\s+0\.16s[\s\S]*?#custom-comment-form-container\.is-returning-main\.is-expanded\s*\{[^}]*grid-template-rows\s+0\.24s", re.I),
+        re.compile(r"#custom-comment-form-container\.is-returning-main\s*\{[^}]*grid-template-rows\s+0\.22s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-returning-main\.is-expanded\s*\{[^}]*grid-template-rows\s+0\.28s\s+var\(--ease\)", re.I),
         "reply-to-main comment motion must stay responsive",
+    ),
+    (
+        re.compile(r"#custom-comment-form-container\s*\{[^}]*transition:\s*grid-template-rows\s+0\.28s\s+var\(--ease\),\s*margin\s+0\.28s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-expanded\s*\{[^}]*transition:\s*grid-template-rows\s+0\.32s\s+var\(--ease\),\s*margin\s+0\.32s\s+var\(--ease\)", re.I),
+        "main comment motion must use the site's balanced easing",
     ),
     (
         re.compile(r"if\s*\(wasExpanded\s*&&\s*!alreadyAtTop\)\s*\{\s*customFormContainer\.classList\.add\(\"is-returning-main\"\);\s*setFormExpanded\(false\)", re.I),
         "reply-to-main speed override must cover both motion phases",
     ),
     (
-        re.compile(r"const\s+relocateAndExpand\s*=\s*\(\)\s*=>\s*\{\s*if\s*\(actionToken\s*!==\s*formActionToken\)\s*return;\s*if\s*\(!alreadyAtTop\)\s*customFormContainer\.classList\.add\(\"is-returning-main\"\)", re.I),
+        re.compile(r"const\s+relocateAndExpand\s*=\s*\(\)\s*=>\s*\{\s*if\s*\(actionToken\s*!==\s*formActionToken\)\s*return;[\s\S]*?if\s*\(!alreadyAtTop\)\s*customFormContainer\.classList\.add\(\"is-loading-mask\"\);\s*if\s*\(!alreadyAtTop\)\s*customFormContainer\.classList\.add\(\"is-returning-main\"\)", re.I),
         "interrupted reply-to-main motion must retain the fast open",
     ),
     (
-        re.compile(r"if\s*\(customFormContainer\.classList\.contains\(\"is-expanded\"\)\)\s*\{\s*customFormContainer\.classList\.remove\(\"is-returning-main\"\)", re.I),
+        re.compile(r"if\s*\(customFormContainer\.classList\.contains\(\"is-expanded\"\)\)\s*\{[\s\S]*?customFormContainer\.classList\.remove\(\"is-returning-main\"\)", re.I),
         "reply-to-main speed override must clear after expansion",
     ),
     (
-        re.compile(r"if\s*\(!alreadyAtTop\)\s*\{\s*restoreEditorVisibility\(editorIframe,\s*actionToken\);\s*queueEditorFocus\(editorIframe,\s*actionToken,\s*true\);\s*\}", re.I | re.S),
-        "main comment reopen must not focus the iframe and trigger a compact resize",
+        re.compile(r"const\s+expandMainForm\s*=\s*\(\)\s*=>[\s\S]*?setFormExpanded\(true\);\s*afterFormOpened\(actionToken,\s*finishMainToggle\);", re.I),
+        "main comment form must finish through the transition lifecycle without iframe focus",
     ),
     (
         re.compile(r"#custom-comment-form-container:not\(\.is-expanded\)\s+iframe#comment-editor\s*\{\s*transition:\s*none", re.I | re.S),
         "collapsed comment editor must settle hidden height updates immediately",
     ),
     (
-        re.compile(r"const\s+primeCompactEditorBeforeOpen\s*=\s*iframe\s*=>\s*\{[\s\S]*?settledEditorHeight\s*=\s*MIN_EDITOR_HEIGHT;[\s\S]*?--comment-editor-height[\s\S]*?iframe\.setAttribute\(\"height\",\s*String\(MIN_EDITOR_HEIGHT\)\)", re.I),
-        "main comment reopen must prime Blogger's compact editor height",
+        re.compile(r"if\s*\(alreadyAtTop\)\s*\{[\s\S]*?applyEditorHeight\(editorIframe,\s*settledEditorHeight,\s*true\);[\s\S]*?expandMainForm\(\);\s*\}\s*else\s*\{\s*requestAnimationFrame\(\(\)\s*=>\s*\{[\s\S]*?requestAnimationFrame\(expandMainForm\)", re.I),
+        "main comment form must use the closed baseline before reopening",
     ),
     (
-        re.compile(r"primeCompactEditorBeforeOpen\(editorIframe\);\s*const\s+expandMainForm\s*=\s*\(\)\s*=>\s*\{[\s\S]*?setFormExpanded\(true\)", re.I),
-        "compact comment height must settle before expansion",
+        re.compile(r"function\s+normalizeClosedEditorHeight\(iframe\)\s*\{[\s\S]*?classList\.contains\(\"is-expanded\"\)\)\s*return;[\s\S]*?applyEditorHeight\(iframe,\s*MIN_EDITOR_HEIGHT,\s*true\);[\s\S]*?iframe\.setAttribute\(\"height\",\s*MIN_EDITOR_HEIGHT\s*\+\s*\"px\"\)", re.I),
+        "closed main editors must commit Blogger's compact reopen baseline",
     ),
     (
-        re.compile(r"requestAnimationFrame\(\(\)\s*=>\s*\{[\s\S]*?if\s*\(!alreadyAtTop\)\s*requestAnimationFrame\(expandMainForm\);\s*else\s*expandMainForm\(\)", re.I),
-        "relocated main comment form must paint collapsed before expanding",
+        re.compile(r"if\s*\(reduceMotion\(\)\)[\s\S]*?normalizeClosedEditorHeight\(iframe\);[\s\S]*?setEditorState\(\"closed\",\s*iframe\)[\s\S]*?transitionend[\s\S]*?else\s+if\s*\(editorState\s*===\s*\"closing\"\)[\s\S]*?normalizeClosedEditorHeight\(iframe\);[\s\S]*?setEditorState\(\"closed\",\s*iframe\)", re.I),
+        "both reduced-motion and animated closes must normalize while hidden",
+    ),
+    (
+        re.compile(r"const\s+afterFormClosed\s*=\s*\(token,\s*callback\)\s*=>[\s\S]*?probeFrame\s*=\s*requestAnimationFrame\([\s\S]*?getComputedStyle\(customFormContainer\)\.gridTemplateRows[\s\S]*?collapsedRow\s*<=\s*2\.5[\s\S]*?finish\(\)", re.I),
+        "comment relocation must recover when a collapsed form emits no transitionend",
     ),
     (
         re.compile(r"\.mascot-menu\s+button\s*\{[^}]*transition:\s*transform\s+0\.18s\s+var\(--ease\)", re.I | re.S),
@@ -566,16 +646,48 @@ THEME_REQUIRED_CHECKS = (
         "comment iframe source must stay an <a href> so BLOG_CMT_createIframe can tokenize it",
     ),
     (
-        re.compile(r"<iframe\s+allowtransparency='allowtransparency'\s+class='blogger-iframe-colorize blogger-comment-from-post'\s+frameborder='0'\s+height='66'\s+id='comment-editor'", re.I),
-        "comment editor must start at the compact settled anonymous height",
+        re.compile(r"getElementById\(\"comment-editor-src\"\)[\s\S]*?searchParams\.set\(\"m\",\s*\"1\"\)[\s\S]*?searchParams\.set\(\"hl\",\s*locale\)[\s\S]*?link\.href\s*=\s*url\.href", re.I),
+        "comment editor must use its final renderer and locale on the first request",
+    ),
+    (
+        re.compile(r"<link\s+href='https://www\.blogger\.com'\s+rel='preconnect'\s*/>[\s\S]*?<link\s+href='https://blogger\.googleusercontent\.com'\s+rel='preconnect'\s*/>", re.I),
+        "comment editor and avatar must warm their connections before iframe creation",
+    ),
+    (
+        re.compile(r"<iframe\s+allowtransparency='allowtransparency'\s+class='blogger-iframe-colorize blogger-comment-from-post'\s+fetchpriority='high'\s+frameborder='0'\s+height='66'\s+id='comment-editor'\s+loading='eager'\s+name='comment-editor'\s+scrolling='no'", re.I),
+        "comment editor must load eagerly without an independently scrollable viewport",
     ),
     (
         re.compile(r"#custom-comment-form-container\.is-reserved\s*\{\s*min-height:\s*66px", re.I),
         "comment editor reservation must match its compact initial height",
     ),
     (
+        re.compile(r"#custom-comment-form-container:not\(\.is-expanded\)\s+\.form-inner\s*\{[^}]*border-color:\s*transparent[^}]*box-shadow:\s*none", re.I | re.S),
+        "collapsed comment form must not leave a flattened border line",
+    ),
+    (
+        re.compile(r"\.form-inner\s*\{[^}]*transition:\s*var\(--comment-theme-transition\)", re.I | re.S),
+        "comment form background must share the page theme transition",
+    ),
+    (
+        re.compile(r"\.is-theme-switching\s+\.top-actions\s*\{[^}]*background-color\s+0s\s*,\s*box-shadow\s+0s", re.I | re.S),
+        "toolbar surface must switch with foreground colours without blur repaints",
+    ),
+    (
+        re.compile(r"\.top-actions\s+\.action-btn:focus-visible\s*\{[^}]*position:\s*relative[^}]*z-index:\s*1", re.I | re.S),
+        "focused toolbar controls must paint above adjacent buttons",
+    ),
+    (
+        re.compile(r"const\s+rect\s*=\s*form\s*&&\s*form\.getBoundingClientRect\(\)[\s\S]*?const\s+visible\s*=\s*rect\s*&&\s*rect\.bottom\s*>\s*0\s*&&\s*rect\.top\s*<\s*window\.innerHeight\s*&&\s*rect\.right\s*>\s*0\s*&&\s*rect\.left\s*<\s*window\.innerWidth[\s\S]*?typeof\s+document\.startViewTransition\s*!==\s*\"function\"\s*\|\|\s*!visible", re.I),
+        "offscreen comment editors must not start a native theme snapshot",
+    ),
+    (
+        re.compile(r"\.is-comment-view-transition\s*\{[^}]*view-transition-name:\s*none[^}]*\}[\s\S]*?\.is-comment-view-transition\s+\.form-inner\s*\{[^}]*view-transition-name:\s*comment-form[^}]*transition:\s*none[\s\S]*?\.is-comment-view-transition\s+\.top-actions\s*\{[^}]*view-transition-name:\s*comment-theme-actions[\s\S]*?\.is-comment-view-transition\s+\.reading-bar\s*\{[^}]*view-transition-name:\s*comment-reading-progress[\s\S]*?::view-transition-(?:old|new)\(comment-theme-actions\)[\s\S]*?::view-transition-(?:old|new)\(comment-reading-progress\)[\s\S]*?applyThemeWithCommentSnapshot\s*=\s*theme\s*=>\s*\{[\s\S]*?#custom-comment-form-container\.is-expanded\s+\.form-inner[\s\S]*?reduceContentMotion\(\)[\s\S]*?document\.startViewTransition[\s\S]*?transition\.finished\.then\(cleanup,\s*cleanup\)", re.I),
+        "visible comment editor theme changes must snapshot the form and fixed reading chrome with a safe fallback",
+    ),
+    (
         re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?filter:\s*invert\(0\)\s+hue-rotate\(0deg\)\s+brightness\(1\)[\s\S]*?mix-blend-mode:\s*multiply[\s\S]*?transition:\s*height", re.I),
-        "light comment editor must keep its stable multiply identity and height-only motion",
+        "light comment editor must keep its stable multiply identity and geometry motion",
     ),
     (
         re.compile(r"\.header-desc\s*\{[^}]*color:\s*inherit[^}]*opacity:\s*0\.62[^}]*transition:\s*none", re.I | re.S),
@@ -598,24 +710,80 @@ THEME_REQUIRED_CHECKS = (
         "published comment avatars must request high-resolution path, suffix, and sz URL variants",
     ),
     (
-        re.compile(r"\[data-theme=\"dark\"\]\s+\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?filter:\s*invert\(1\)\s+hue-rotate\(180deg\)\s+brightness\(0\.9\)[\s\S]*?mix-blend-mode:\s*screen", re.I),
-        "dark comment editor must use the stable black screen identity",
+        re.compile(r"\[data-theme=\"dark\"\]\s+\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?filter:\s*invert\(1\)\s+hue-rotate\(180deg\)\s+brightness\(1\)[\s\S]*?mix-blend-mode:\s*screen", re.I),
+        "dark comment editor must use the cross-origin-safe CSS filter path",
     ),
     (
-        re.compile(r"const\s+prepareEditorReload\s*=\s*iframe\s*=>[\s\S]*?settledEditorHeight\s*=\s*MIN_EDITOR_HEIGHT[\s\S]*?iframe\.setAttribute\(\"height\",\s*\"66\"\)[\s\S]*?iframe\.removeAttribute\(\"data-resized\"\)", re.I),
-        "comment editor URL reloads must reset stale expanded heights to baseline",
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*top:\s*16px[^}]*left:\s*10\.5px[^}]*width:\s*35px[^}]*height:\s*35px[\s\S]*?const\s+LOWER_AVATAR_EDITOR_HEIGHT\s*=\s*220[\s\S]*?settledEditorHeight\s*=\s*parsed[\s\S]*?setProperty\('--comment-editor-height',\s*parsed\s*\+\s*'px'\)", re.I | re.S),
+        "editor height updates must not move the fixed upper avatar probe",
     ),
     (
-        re.compile(r"iframe\.style\.transition\s*=\s*'opacity 0\.22s ease-out'[\s\S]*?iframe\.style\.opacity\s*=\s*''", re.I),
-        "reply relocation must restore theme-controlled opacity instead of forcing opaque",
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*-webkit-backdrop-filter:\s*invert\(0\)\s+hue-rotate\(0deg\)[^}]*backdrop-filter:\s*invert\(0\)\s+hue-rotate\(0deg\)[^}]*filter:\s*url\(\"#comment-avatar-presence\"\)[^}]*\}[\s\S]*?\[data-theme=\"dark\"\]\s+\.comment-avatar-window:not\(\[hidden\]\)\s*\{[^}]*-webkit-backdrop-filter:\s*invert\(1\)\s+hue-rotate\(180deg\)[^}]*backdrop-filter:\s*invert\(1\)\s+hue-rotate\(180deg\)", re.I | re.S),
+        "both avatar probes must use the same pixel-synchronous presence filter",
     ),
     (
-        re.compile(r"const\s+markAvatarReady\s*=\s*\(\)\s*=>[\s\S]*?requestAnimationFrame\([\s\S]*?avatarWindow\.classList\.add\(\"is-ready\"\)", re.I),
-        "avatar restoration must start on the frame after the embedded image loads",
+        re.compile(r"\.comment-avatar-window\s*\{[^}]*border-radius:\s*50%[^}]*\}[\s\S]*?\.comment-avatar-window-lower\[data-avatar-layout=\"lower\"\]:not\(\[hidden\]\)\s*\{[^}]*display:\s*block[^}]*top:\s*69px[^}]*filter:\s*url\(\"#comment-avatar-presence\"\)[\s\S]*?\.comment-avatar-window\[data-avatar-layout=\"lower\"\]:not\(\.comment-avatar-window-lower\):not\(\[hidden\]\)\s*\{[^}]*display:\s*none[\s\S]*?@media\s*\(max-width:\s*600px\)\s*\{[\s\S]*?\.comment-avatar-window-lower\[data-avatar-layout=\"lower\"\]:not\(\[hidden\]\)\s*\{[^}]*top:\s*94px", re.I | re.S),
+        "lower layout must disable the upper probe and keep one rounded profile-aware slot",
+    ),
+    (
+        re.compile(r"avatarLowerWindow\.dataset\.avatarLayout\s*=\s*parsed\s*>=\s*LOWER_AVATAR_EDITOR_HEIGHT\s*\?\s*'lower'\s*:\s*'upper';\s*avatarLowerWindow\.hidden\s*=\s*!avatarWindow\s*\|\|\s*avatarWindow\.hidden\s*\|\|\s*parsed\s*<\s*LOWER_AVATAR_EDITOR_HEIGHT", re.I | re.S),
+        "lower avatar probe visibility must follow every confirmed editor height change",
+    ),
+    (
+        re.compile(r"<filter[^>]*height='100%'[^>]*id='comment-avatar-presence'[^>]*width='100%'[^>]*x='0'[^>]*y='0'[^>]*>[\s\S]*?<feBlend[^>]*result='avatarChroma'[^>]*/>[\s\S]*?<feColorMatrix[^>]*result='avatarColorSeed'[^>]*values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  20 20 20 0 -2\.2'[^>]*/>[\s\S]*?<feComponentTransfer[^>]*in='avatarColorSeed'[^>]*result='avatarColorPresence'>[\s\S]*?<feMorphology[^>]*in='avatarColorPresence'[^>]*operator='erode'[^>]*radius='2'[^>]*result='avatarSolidColor'[^>]*/>[\s\S]*?<feMorphology[^>]*in='avatarSolidColor'[^>]*operator='dilate'[^>]*radius='20'[^>]*/>[\s\S]*?<feComposite[^>]*in='SourceGraphic'[^>]*operator='in'[^>]*/>[\s\S]*?</filter>", re.I),
+        "avatar presence must reject thin profile chrome before expanding the 35px mask",
+    ),
+    (
+        re.compile(r"\[data-theme=\"dark\"\]\s+#custom-comment-form-container\[data-editor-state=\"loading\"\]\s+\.comment-avatar-window:not\(\[hidden\]\),\s*\[data-theme=\"dark\"\]\s+#custom-comment-form-container\[data-editor-state=\"settling\"\]\s+\.comment-avatar-window:not\(\[hidden\]\)\s*\{[^}]*opacity:\s*0", re.I | re.S),
+        "avatar correction must remain visible throughout the closing animation",
+    ),
+    (
+        re.compile(r"avatarWindow\.dataset\.avatarLayout\s*=\s*parsed\s*>=\s*LOWER_AVATAR_EDITOR_HEIGHT\s*\?\s*'lower'\s*:\s*'upper'[\s\S]*?avatarWindow\.dataset\.avatarLayout\s*=\s*settledEditorHeight\s*>=\s*LOWER_AVATAR_EDITOR_HEIGHT\s*\?\s*'lower'\s*:\s*'upper'", re.I),
+        "avatar layout state must stay synchronized before and after iframe creation",
+    ),
+    (
+        re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?transition:\s*height\s+0\.24s\s+var\(--ease-out\),\s*opacity\s+0\.22s\s+var\(--ease-out\);?", re.I),
+        "comment iframe compositing must switch atomically without a discrete transition",
+    ),
+    (
+        re.compile(r"const\s+prepareEditorReload\s*=\s*\(iframe,\s*replyReload\s*=\s*false,\s*preserveAvatarLayer\s*=\s*replyReload\)\s*=>[\s\S]*?replyReloadPending\s*=\s*replyReload[\s\S]*?keepAvatarWindowMounted\s*=\s*preserveAvatarLayer[\s\S]*?if\s*\(!replyReload\)[\s\S]*?settledEditorHeight\s*=\s*MIN_EDITOR_HEIGHT[\s\S]*?setProperty\('--comment-editor-height',\s*MIN_EDITOR_HEIGHT\s*\+\s*'px'\)[\s\S]*?iframe\.setAttribute\(\"height\",\s*\"66\"\)[\s\S]*?iframe\.removeAttribute\(\"data-resized\"\)", re.I),
+        "identity reloads must reset geometry while reply reloads keep the confirmed frame",
+    ),
+    (
+        re.compile(r"#custom-comment-form-container\[data-editor-state=\"loading\"\]\s+iframe#comment-editor\s*\{[^}]*opacity:\s*0[\s\S]*?const\s+restoreEditorVisibility\s*=\s*\(iframe,\s*token\)\s*=>\s*\{\s*if\s*\(!iframe\s*\|\|\s*token\s*!==\s*formActionToken\s*\|\|\s*editorReloadPending\)\s*return;\s*customFormContainer\.classList\.remove\(\"is-relocating\"\)", re.I),
+        "comment iframe must remain hidden until its confirmed reload finishes",
+    ),
+    (
+        re.compile(r"\.comment-editor-loading\s*\{[^}]*display:\s*none[^}]*position:\s*absolute[^}]*z-index:\s*4[^}]*inset:\s*0[^}]*pointer-events:\s*none[^}]*background:\s*var\(--bg-color\)[\s\S]*?#custom-comment-form-container\.is-expanded\[data-editor-state=\"loading\"\]\s+\.comment-editor-loading,\s*#custom-comment-form-container\.is-expanded\[data-editor-state=\"settling\"\]\s+\.comment-editor-loading,\s*#custom-comment-form-container\.is-expanded\.is-loading-mask\s+\.comment-editor-loading,\s*#custom-comment-form-container\.is-expanded\.is-relocating\s+\.comment-editor-loading\s*\{[^}]*display:\s*flex[\s\S]*?\.comment-editor-loading::before\s*\{\s*content:\s*\"加载中\"[\s\S]*?\.comment-editor-loading::after\s*\{[^}]*animation:\s*comment-editor-loading-runner\s+1\.05s\s+linear\s+infinite", re.I | re.S),
+        "loading mask must show localized text and an indeterminate runner above every editor layer",
+    ),
+    (
+        re.compile(r"editorLoadingMask\s*=\s*formInner\.querySelector\('\.comment-editor-loading'\)[\s\S]*?document\.createElement\('span'\)[\s\S]*?className\s*=\s*'comment-editor-loading'[\s\S]*?setAttribute\('role',\s*'status'\)[\s\S]*?syncEditorLoadingText\(\)", re.I),
+        "loading mask must be mounted with accessible status text before the editor is revealed",
+    ),
+    (
+        re.compile(r"applyEditorHeight\(iframe,\s*measuredHeight\s*\|\|\s*settledEditorHeight,\s*true\)[\s\S]*?editorReloadPending\s*=\s*false[\s\S]*?setEditorState\(\"settling\",\s*iframe\)[\s\S]*?restoreEditorVisibility\(iframe,\s*editorLoadToken\)[\s\S]*?scheduleEditorReveal\(iframe,\s*editorLoadToken\)", re.I),
+        "confirmed editor load must paint behind the mask before the relocated iframe is revealed",
+    ),
+    (
+        re.compile(r"scheduleEditorReveal\s*=\s*\(iframe,\s*token\)\s*=>\s*\{\s*requestAnimationFrame\(\(\)\s*=>\s*requestAnimationFrame\(\(\)\s*=>\s*\{[\s\S]*?editorState\s*!==\s*\"settling\"[\s\S]*?classList\.contains\(\"is-expanded\"\)[\s\S]*?setEditorLoading\(iframe,\s*false\)[\s\S]*?classList\.remove\(\"is-loading-mask\"\)[\s\S]*?iframe\.style\.removeProperty\(\"transition\"\)", re.I),
+        "reply editor must keep its mask through two expanded compositor frames",
+    ),
+    (
+        re.compile(r"const\s+relocateAndExpand\s*=\s*\(\)\s*=>\s*\{\s*if\s*\(actionToken\s*!==\s*formActionToken\)\s*return;[\s\S]*?if\s*\(!alreadyAtTop\)\s*customFormContainer\.classList\.add\(\"is-loading-mask\"\)[\s\S]*?const\s+relocateAndExpand\s*=\s*\(\)\s*=>\s*\{\s*if\s*\(actionToken\s*!==\s*formActionToken\)\s*return;[\s\S]*?customFormContainer\.classList\.add\(\"is-loading-mask\"\)", re.I),
+        "reply relocation mask must mount after closing and before either destination paints",
+    ),
+    (
+        re.compile(r"finishEditorLoad\s*=\s*iframe\s*=>\s*\{\s*if\s*\(!editorReloadPending\s*\|\|\s*!editorFrameLoaded", re.I),
+        "a completed editor load must not settle twice and flash the loading mask",
+    ),
+    (
+        re.compile(r"const\s+markEditorFrameReady\s*=\s*\(\)\s*=>\s*\{\s*editorFrameLoaded\s*=\s*true;[\s\S]*?editorResizeConfirmed\s*=\s*editorIframe\.getAttribute\(\"data-resized\"\)\s*===\s*\"true\";[\s\S]*?if\s*\(replyReloadPending\)\s*finishEditorLoad\(editorIframe\);\s*else\s+if\s*\(editorResizeConfirmed\)\s*scheduleEditorSettle\(editorIframe\)", re.I),
+        "reply iframe load must reveal immediately while other reloads await confirmed resize",
     ),
     (
         re.compile(r"const\s+placeEditorInForm\s*=\s*\(iframe,\s*formInner\)\s*=>[\s\S]*?formInner\.insertBefore\(iframe,\s*avatarWindow\)[\s\S]*?formInner\.appendChild\(iframe\)", re.I),
-        "comment editor must remain immediately before its avatar restoration window",
+        "comment editor must remain immediately before its avatar correction layer",
     ),
     (
         re.compile(r"const\s+mobileEditorUrlParts\s*=\s*src\s*=>[\s\S]*?new\s+URL\(parts\[0\],\s*window\.location\.href\)[\s\S]*?searchParams\.set\(\"m\",\s*\"1\"\)[\s\S]*?return\s*\[url\.href,\s*parts\[1\]\s*\|\|\s*\"\"\]", re.I),
@@ -626,28 +794,48 @@ THEME_REQUIRED_CHECKS = (
         "comment editor URL must be captured from the Blogger-tokenized iframe src",
     ),
     (
-        re.compile(r"const\s+setEditorSrc\s*=\s*\(iframe,\s*parentId\)\s*=>\s*\{[\s\S]*?\"&parentID=\"\s*\+\s*parentId[\s\S]*?if\s*\(iframe\.src\s*!==\s*src\)\s*\{[\s\S]*?prepareEditorReload\(iframe\)[\s\S]*?iframe\.src\s*=\s*src", re.I),
+        re.compile(r"const\s+setEditorSrc\s*=\s*\(iframe,\s*parentId\)\s*=>\s*\{[\s\S]*?\"&parentID=\"\s*\+\s*parentId[\s\S]*?if\s*\(iframe\.src\s*!==\s*src\)\s*\{\s*if\s*\(!editorReloadPending\)\s*prepareEditorReload\(iframe\);\s*iframe\.src\s*=\s*src", re.I),
         "comment editor src must be rebuilt from tokenized parts, compacted, and assigned only when changed",
-    ),
-    (
-        re.compile(r"const\s+syncAvatarWindow\s*=\s*iframe\s*=>[\s\S]*?avatarWindow\.hidden\s*=\s*!iframe\s*\|\|\s*!iframe\.getAttribute\(\"src\"\)", re.I),
-        "dark comment avatar restoration window must follow the editor URL state",
-    ),
-    (
-        re.compile(r"avatarWindow\.className\s*=\s*'comment-avatar-window'[\s\S]*?avatarWindow\.setAttribute\('aria-hidden',\s*'true'\)[\s\S]*?avatarWindow\.setAttribute\('inert',\s*''\)[\s\S]*?formInner\.appendChild\(avatarWindow\)", re.I),
-        "dark comment avatar restoration window must stay non-interactive",
     ),
     (
         re.compile(r"const\s+parentId\s*=\s*parentComment\s*&&\s*parentComment\.id\s*\?[\s\S]*?setEditorSrc\(iframe,\s*parentId\)", re.I),
         "replies must pass the parent comment id to the editor frame",
     ),
     (
+        re.compile(r"detachEditorForReload\(iframe,\s*true\)[\s\S]*?setEditorSrc\(iframe,\s*parentId\)", re.I),
+        "reply relocation must keep the confirmed frame and fast-load state",
+    ),
+    (
+        re.compile(r"detachEditorForReload\(editorIframe,\s*false,\s*true\)[\s\S]*?commentsWrapper\.insertBefore\(customFormContainer,\s*mainComments\)", re.I),
+        "reply return must preserve the composited avatar correction layer",
+    ),
+    (
+        re.compile(r"document\.body\.addEventListener\(\"click\",\s*e\s*=>\s*\{\s*const\s+replyBtn\s*=\s*e\.target\.closest\(\"\.comment-reply\"\);\s*if\s*\(!replyBtn\)\s*return;\s*e\.preventDefault\(\);\s*e\.stopPropagation\(\)[\s\S]*?\},\s*true\)", re.I),
+        "custom reply handling must capture the click before Blogger's native reply handler",
+    ),
+    (
+        re.compile(r"typeof\s+moveParent\.moveBefore\s*===\s*\"function\"[\s\S]*?prepareEditorReload\(iframe,\s*true\)[\s\S]*?moveParent\.moveBefore\(customFormContainer,\s*moveTarget\)", re.I),
+        "modern browsers must move the reply form without an intermediate iframe navigation",
+    ),
+    (
+        re.compile(r"const\s+relocateAndExpand\s*=\s*\(\)\s*=>[\s\S]*?prepareEditorReload\(iframe,\s*true\)[\s\S]*?moveParent\.moveBefore\(customFormContainer,\s*moveTarget\)[\s\S]*?if\s*\(wasExpanded\)\s*\{\s*setFormExpanded\(false\);\s*afterFormClosed\(actionToken,\s*relocateAndExpand\)", re.I),
+        "reply relocation must finish the old collapse before moving and reopening",
+    ),
+    (
         re.compile(r"iframe\.removeAttribute\('src'\)", re.I),
         "editor relocation must drop src via removeAttribute, never src='' (loads the page recursively)",
     ),
     (
-        re.compile(r"setEditorSrc\(iframe,\s*null\)", re.I),
-        "cancelled replies must restore the top-level editor src",
+        re.compile(r"replyBtn\.classList\.contains\(\"cancel-active\"\)\s*&&\s*commentToggleBtn[\s\S]*?commentToggleBtn\.click\(\);\s*return", re.I),
+        "cancelled replies must reuse the stable main-toggle return path",
+    ),
+    (
+        re.compile(r"let\s+mainToggleBusy\s*=\s*false;\s*let\s+queuedMainToggle\s*=\s*false[\s\S]*?if\s*\(mainToggleBusy\)\s*\{[\s\S]*?queuedMainToggle\s*=\s*!queuedMainToggle[\s\S]*?const\s+finishMainToggle\s*=\s*\(\)\s*=>[\s\S]*?commentToggleBtn\.click\(\)[\s\S]*?afterFormClosed\(actionToken,\s*finishMainToggle\)[\s\S]*?afterFormOpened\(actionToken,\s*finishMainToggle\)", re.I),
+        "rapid main-toggle clicks must queue final intent until the current transition finishes",
+    ),
+    (
+        re.compile(r"const\s+parentId\s*=\s*parentComment[\s\S]*?let\s+replyNavigationStarted\s*=\s*false[\s\S]*?if\s*\(iframe\s*&&\s*canPreserveFrame\)\s*\{\s*prepareEditorReload\(iframe,\s*true\);[\s\S]*?setEditorSrc\(iframe,\s*parentId\);\s*replyNavigationStarted\s*=\s*true;[\s\S]*?const\s+relocateAndExpand", re.I),
+        "reply iframe navigation must overlap the close transition before relocation",
     ),
     (
         re.compile(r"const\s+setMainFormState\s*=\s*expanded\s*=>[\s\S]*?commentToggleBtn\.setAttribute\(\"aria-expanded\",\s*expanded\s*\?\s*\"true\"\s*:\s*\"false\"\)", re.I),
