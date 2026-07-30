@@ -442,6 +442,22 @@ THEME_REGRESSION_CHECKS = (
 )
 THEME_REQUIRED_CHECKS = (
     (
+        re.compile(r"var\s+TITLE_SELECTOR\s*=\s*'h1,h2,h3,h4,h5,h6,\.related-posts li a,\.mascot-menu \.menu-title'[\s\S]*?data-newspaper-break[\s\S]*?document\.createRange\(\)[\s\S]*?var\s+preferredBreak\s*=\s*function", re.I),
+        "all visual titles must share the punctuation-first pre-paint typesetter",
+    ),
+    (
+        re.compile(r"__rinuanTypesetTitles\(document\.querySelector\('\.site-header'\)\)[\s\S]*?__rinuanTypesetTitles\(document\.getElementById\('main-content'\)\)", re.I),
+        "initial header and main titles must be typeset during parsing",
+    ),
+    (
+        re.compile(r"__rinuanTypesetTitles\(wrapper\)[\s\S]*?appendedPosts\.forEach\(post\s*=>\s*window\.__rinuanTypesetTitles\(post\)\)", re.I),
+        "related and infinite-scroll titles must be typeset before their next paint",
+    ),
+    (
+        re.compile(r"var\s+titleViewportWidth\s*=\s*window\.innerWidth[\s\S]*?if\s*\(window\.innerWidth\s*===\s*titleViewportWidth\)\s*return", re.I),
+        "title typesetting must ignore mobile height-only resize events",
+    ),
+    (
         re.compile(r"#custom-comment-form-container\.is-returning-main\s*\{[^}]*grid-template-rows\s+0\.22s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-returning-main\.is-expanded\s*\{[^}]*grid-template-rows\s+0\.28s\s+var\(--ease\)", re.I),
         "reply-to-main comment motion must stay responsive",
     ),
