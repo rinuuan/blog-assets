@@ -16,12 +16,8 @@
       <meta content='website' property='og:type'/>
     </b:if>
     <!-- Default share cover (1200x630) for views without a featured image. -->
-    <b:if cond='data:view.isSingleItem'>
-      <b:if cond='data:view.featuredImage'>
-        <meta expr:content='resizeImage(data:view.featuredImage, 1200, &quot;1200:630&quot;)' property='og:image'/>
-      <b:else/>
-        <meta content='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/cover-light.png' property='og:image'/>
-      </b:if>
+    <b:if cond='data:view.isSingleItem and data:view.featuredImage'>
+      <meta expr:content='resizeImage(data:view.featuredImage, 1200, &quot;1200:630&quot;)' property='og:image'/>
     <b:else/>
       <meta content='https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/cover-light.png' property='og:image'/>
     </b:if>
@@ -165,7 +161,7 @@
         /* Gentle overshoot (~5%) - lively without wobble. */
         --ease-spring: cubic-bezier(0.33, 1.36, 0.64, 1);
         /* Shared "spring in, calm out" hover transition (buttons, action icons, retry). */
-        --hover-spring: background 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease-spring);
+        --hover-spring: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease-spring);
         /* Keep the section-break color separate so theme changes can tween it. */
         --section-break: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
       }
@@ -207,6 +203,16 @@
         [data-theme="dark"] {
           --glass-bg: linear-gradient(180deg, rgba(46, 45, 41, 0.97), rgba(40, 39, 36, 0.96));
           --glass-panel: linear-gradient(180deg, rgba(46, 45, 41, 0.98), rgba(40, 39, 36, 0.97));
+          --glass-chrome: rgba(40, 39, 36, 0.96);
+        }
+      }
+
+      /* Native snapshots need a stable flat layer for fixed controls. */
+      @supports (view-transition-name: none) {
+        :root {
+          --glass-chrome: rgba(250, 248, 242, 0.96);
+        }
+        [data-theme="dark"] {
           --glass-chrome: rgba(40, 39, 36, 0.96);
         }
       }
@@ -363,7 +369,7 @@
         border-radius: 30px;
         min-height: 40px;
         /* Calm easing here = calm return; the hover state swaps in the spring for a lively entrance. */
-        transition: background 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease), border-color 0.3s var(--ease);
+        transition: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease), border-color 0.3s var(--ease);
         font-weight: 500;
         font-size: 0.95rem;
         cursor: pointer;
@@ -484,38 +490,35 @@
         transition-timing-function: var(--ease) !important;
       }
 
-      /* First-paint entrance. */
-      @media (prefers-reduced-motion: no-preference) {
+      /* Keep first-paint decoration off the touch critical path. */
+      @media (prefers-reduced-motion: no-preference) and (min-width: 601px) and (hover: hover) and (pointer: fine) {
         .site-header .header-title,
         .main-nav ul,
-        .top-actions .action-btn,
+        .top-actions,
         .error-404 .error-bubble,
         .error-404 .error-code,
         .error-404 .error-home,
         .post-outer:has(.post-body.full-content) h2.post-title,
-        .post-outer:has(.post-body.full-content) .post-meta,
-        .post-outer:has(.post-body.full-content) .post-body.full-content {
+        .post-outer:has(.post-body.full-content) .post-meta {
           animation: card-rise 0.6s var(--ease-out) backwards;
         }
         .main-nav ul             { animation-delay: 0.07s; }
-        .top-actions .action-btn { animation-delay: 0.12s; }
+        .top-actions             { animation-delay: 0.12s; }
         /* Keep the listing header static below the crossfade navigation. */
         /* 404 hero staggers down the stack; idle bob is gated below for desktop pointers. */
-        .error-404 .error-mascot {
-          animation: card-rise 0.6s var(--ease-out) backwards;
-        }
         .error-404 .error-bubble { animation-delay: 0.08s; }
         .error-404 .error-code   { animation-delay: 0.14s; }
         .error-404 .error-home   { animation-delay: 0.2s; }
         .post-outer:has(.post-body.full-content) h2.post-title { animation-delay: 0.05s; }
         .post-outer:has(.post-body.full-content) .post-meta    { animation-delay: 0.12s; }
-        .post-outer:has(.post-body.full-content) .post-body.full-content { animation-delay: 0.18s; }
       }
 
-      .top-actions,
-      .mascot-reopen {
-        -webkit-backdrop-filter: var(--glass-blur);
-        backdrop-filter: var(--glass-blur);
+      @supports not (view-transition-name: none) {
+        .top-actions,
+        .mascot-reopen {
+          -webkit-backdrop-filter: var(--glass-blur);
+          backdrop-filter: var(--glass-blur);
+        }
       }
 
       /* Keep view controls reachable while reading. */
@@ -548,10 +551,11 @@
         justify-content: center;
         width: 42px;
         height: 42px;
-        transition: background 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
+        transition: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
       }
 
-      .action-btn:hover {
+      .action-btn:hover,
+      .social-links a:hover {
         background: var(--btn-bg);
         color: var(--accent-color);
         transform: translateY(-2px);
@@ -560,7 +564,7 @@
 
       #theme-toggle,
       #theme-toggle:hover {
-        transition: background var(--theme-duration) var(--theme-ease),
+        transition: background-color var(--theme-duration) var(--theme-ease),
                     color var(--theme-color-duration) var(--theme-ease),
                     transform var(--theme-duration) var(--theme-ease);
       }
@@ -571,20 +575,25 @@
         outline-offset: -4px;
       }
 
-      /* Switch the small glass surface with foreground colours; animating it adds blur repaints. */
+      /* Switch small glass surfaces with foreground colours to avoid blur repaints. */
       .is-theme-switching .top-actions {
         transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out),
                     background-color 0s, box-shadow 0s;
       }
+      .is-theme-switching .mascot-reopen.is-visible {
+        transition: opacity 0.22s var(--ease), transform 0.2s var(--ease-out),
+                    background-color 0s, color 0s, box-shadow 0s;
+      }
       /* Same instant-press feedback as the pill buttons. */
-      .action-btn:active {
+      .action-btn:active,
+      .social-links a:active {
         transform: scale(0.92);
         transition-duration: 0.1s;
       }
 
-      /* Language and variant toggles use serif text labels. */
+      /* Keep toggle labels on a local serif so deferred fonts cannot resize them. */
       .text-toggle-btn {
-        font-family: var(--serif);
+        font-family: Georgia, 'Times New Roman', serif;
         font-size: 1.25rem;
         font-weight: 500;
       }
@@ -653,9 +662,6 @@
         max-width: 100%;
         margin: 0;
         letter-spacing: 0;
-        word-break: break-all;
-        overflow-wrap: anywhere;
-        line-break: anywhere;
         line-height: 1.3;
       }
 
@@ -800,7 +806,7 @@
         to   { opacity: 1; transform: none; }
       }
       @supports (animation-timeline: view()) {
-        @media (prefers-reduced-motion: no-preference) {
+        @media (prefers-reduced-motion: no-preference) and (min-width: 601px) and (hover: hover) and (pointer: fine) {
           .blog-posts .post-outer:has(.post-body.snippet-content) {
             animation-name: card-rise;
             animation-timing-function: linear;
@@ -897,7 +903,7 @@
         font-family: inherit;
         font-style: normal;
         cursor: pointer;
-        transition: background 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
+        transition: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
       }
       .infinite-status .retry-btn:hover {
         background: var(--accent-bg);
@@ -924,19 +930,8 @@
         letter-spacing: 0;
         word-break: break-all;
         overflow-wrap: anywhere;
-        text-wrap: auto;
         line-break: anywhere;
-        hyphens: auto;
         /* No own colour/transition - it would chase the body's theme fade and lag behind it. */
-      }
-
-      h2.post-title:lang(zh),
-      h2.post-title[lang^="zh"] {
-        word-break: break-all;
-        overflow-wrap: anywhere;
-        text-wrap: auto;
-        line-break: anywhere;
-        letter-spacing: normal;
       }
 
       h2.post-title a {
@@ -956,7 +951,10 @@
       }
 
       h2.post-title .lang-zh,
-      h2.post-title .lang-en {
+      h2.post-title .lang-en,
+      h2.post-title *,
+      .listing-title .lang-zh,
+      .listing-title .lang-en {
         min-width: 0;
         max-width: 100%;
         white-space: normal;
@@ -965,32 +963,14 @@
         line-break: anywhere;
       }
 
-      h2.post-title * {
-        min-width: 0;
-        max-width: 100%;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-all;
-        line-break: anywhere;
-      }
-
-      h2.post-title:lang(en),
-      h2.post-title:lang(en) a,
-      h2.post-title:lang(en) * {
-        word-break: normal;
-        line-break: auto;
-      }
-
-      /* Title spans must never become no-wrap islands on narrow screens. */
+      /* Keep legacy title chunks safe in cached markup. */
       .title-chunk {
         display: inline;
         display: contents;
-        max-width: 100%;
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-all;
         line-break: anywhere;
-        vertical-align: baseline;
       }
 
       h2.post-title a:hover {
@@ -1031,15 +1011,21 @@
         transition: color var(--theme-color-duration) var(--theme-ease);
       }
 
-      .post-body.full-content {
+      .post-body.full-content,
+      .post-body.snippet-content {
         font-size: 1.15rem;
+        line-height: 2.2;
+        text-align: justify;
+        -webkit-hyphens: none;
+        hyphens: none;
+        font-feature-settings: "liga" 1, "calt" 1;
+        text-rendering: optimizeLegibility;
+      }
+
+      .post-body.full-content {
         overflow-wrap: anywhere;
         word-break: normal;
         line-break: anywhere;
-        line-height: 2.2;
-        text-align: justify;
-        font-feature-settings: "liga" 1, "calt" 1;
-        text-rendering: optimizeLegibility;
         /* Classical CJK hanging punctuation (Safari only). */
         hanging-punctuation: first allow-end;
       }
@@ -1081,7 +1067,7 @@
         margin: 30px auto;
         display: block;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        transition: transform 0.5s var(--ease-out), filter var(--theme-duration) var(--theme-ease);
+        transition: transform 0.5s var(--ease-out);
       }
 
       /* Dim photos slightly in the dark theme to cut glare (standard dark-mode practice). */
@@ -1316,16 +1302,7 @@
         word-spacing: 0.05em;
       }
 
-      /* Homepage previews inherit body color during theme changes. */
-      .post-body.snippet-content {
-        font-size: 1.15rem;
-        margin-bottom: 18px;
-        /* Same CLS guard as full-content. */
-        line-height: 2.2;
-        text-align: justify;
-        font-feature-settings: "liga" 1, "calt" 1;
-        text-rendering: optimizeLegibility;
-      }
+      .post-body.snippet-content { margin-bottom: 18px; }
 
       .featured-img-wrapper {
         display: block;
@@ -1343,7 +1320,7 @@
         margin-bottom: 0;
         display: block;
         box-shadow: none;
-        transition: transform 0.6s var(--ease-out), filter var(--theme-duration) var(--theme-ease);
+        transition: transform 0.6s var(--ease-out);
       }
 
       /* Same dark-mode glare cut as article images. */
@@ -1382,26 +1359,11 @@
         font-size: clamp(2.1rem, 1.9rem + 0.6vw, 2.5rem);
         line-height: 1.3;
         letter-spacing: 0;
-        /* Balanced wrapping can split long CJK titles poorly. */
         min-width: 0;
         max-width: 100%;
         overflow-wrap: anywhere;
         word-break: break-all;
         line-break: anywhere;
-      }
-
-      .listing-title .lang-zh,
-      .listing-title .lang-en {
-        min-width: 0;
-        max-width: 100%;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        word-break: break-all;
-        line-break: anywhere;
-      }
-      [data-lang="en"] .listing-title .lang-en {
-        word-break: normal;
-        line-break: auto;
       }
 
       /* Pagination */
@@ -1468,6 +1430,31 @@
         line-break: anywhere;
         /* Hover slides via transform (compositor) - padding would re-layout every frame. */
         transition: color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
+      }
+      /* Keep natural wrapping strict; the pre-paint pass promotes punctuation breaks. */
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      .header-title .header-logo-link > span:last-child,
+      .post-outer h2.post-title,
+      .post-outer h2.post-title a,
+      .post-outer h2.post-title .lang-zh,
+      .post-outer h2.post-title .lang-en,
+      .post-outer h2.post-title *,
+      .listing-header .listing-title,
+      .listing-header .listing-title .lang-zh,
+      .listing-header .listing-title .lang-en,
+      .related-posts ul li a,
+      .mascot-menu .menu-title {
+        white-space: normal;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+        line-break: strict;
+        text-wrap: balance;
+        hyphens: none;
       }
       .related-posts li a::before {
         content: '\2192';
@@ -1595,6 +1582,12 @@
         box-shadow: var(--comment-form-shadow);
         transition: var(--comment-theme-transition);
       }
+      /* Keep the single editor surface precomposed across viewports. */
+      #custom-comment-form-container .form-inner { will-change: transform; }
+      /* Precompose mobile reply fades without retaining every desktop thread. */
+      @media (max-width: 600px) {
+        .replies-grid-wrapper { will-change: opacity; }
+      }
       /* Crossfade the corrected iframe as one surface while the page theme moves. */
       .is-comment-view-transition {
         view-transition-name: none;
@@ -1609,12 +1602,62 @@
       .is-comment-view-transition .reading-bar {
         view-transition-name: comment-reading-progress;
       }
+      .is-comment-view-transition .mascot:not(.is-hidden) {
+        view-transition-name: comment-theme-mascot;
+      }
+      .is-comment-view-transition .mascot-bubble.is-shown {
+        view-transition-name: comment-theme-mascot-bubble;
+      }
+      .is-comment-view-transition .mascot-reopen.is-visible {
+        view-transition-name: comment-theme-mascot-reopen-left;
+      }
+      .is-comment-view-transition .mascot-reopen.is-visible.side-right {
+        view-transition-name: comment-theme-mascot-reopen-right;
+      }
+      /* Clip fixed-control snapshots without rebuilding their glass layers. */
+      ::view-transition-group(comment-theme-actions) {
+        border-radius: 26px;
+        overflow: hidden;
+        box-shadow: var(--glass-drop);
+        z-index: 33;
+      }
+      ::view-transition-group(comment-theme-mascot-reopen-left) {
+        border-radius: 0 23px 23px 0;
+        overflow: hidden;
+        box-shadow: var(--glass-drop);
+        z-index: 32;
+      }
+      ::view-transition-group(comment-theme-mascot-reopen-right) {
+        border-radius: 23px 0 0 23px;
+        overflow: hidden;
+        box-shadow: var(--glass-drop);
+        z-index: 32;
+      }
+      ::view-transition-old(comment-theme-actions),
+      ::view-transition-old(comment-theme-mascot-reopen-left),
+      ::view-transition-old(comment-theme-mascot-reopen-right) {
+        display: none;
+      }
+      ::view-transition-new(comment-theme-actions),
+      ::view-transition-new(comment-theme-mascot-reopen-left),
+      ::view-transition-new(comment-theme-mascot-reopen-right) {
+        animation: none;
+        mix-blend-mode: normal;
+      }
+      ::view-transition-group(comment-theme-mascot) {
+        z-index: 30;
+      }
+      ::view-transition-group(comment-theme-mascot-bubble) {
+        z-index: 31;
+      }
       ::view-transition-old(comment-form),
       ::view-transition-new(comment-form),
-      ::view-transition-old(comment-theme-actions),
-      ::view-transition-new(comment-theme-actions),
       ::view-transition-old(comment-reading-progress),
-      ::view-transition-new(comment-reading-progress) {
+      ::view-transition-new(comment-reading-progress),
+      ::view-transition-old(comment-theme-mascot),
+      ::view-transition-new(comment-theme-mascot),
+      ::view-transition-old(comment-theme-mascot-bubble),
+      ::view-transition-new(comment-theme-mascot-bubble) {
         animation-duration: var(--theme-duration);
         animation-timing-function: var(--theme-ease);
       }
@@ -1708,6 +1751,10 @@
       #custom-comment-form-container[data-editor-state="loading"] iframe#comment-editor {
         opacity: 0;
       }
+      /* Finish the iframe paint behind the loading mask. */
+      #custom-comment-form-container[data-editor-state="settling"] iframe#comment-editor {
+        transition: none;
+      }
       [data-theme="dark"] .comments-wrapper iframe#comment-editor {
         color-scheme: dark !important;
         /* White becomes black; screen(black, backdrop) leaves the backdrop unchanged. */
@@ -1777,6 +1824,13 @@
           transform: translateY(-0.5px);
         }
       }
+      @media (min-width: 492px) and (max-width: 600px) {
+        /* Blogger returns to the 69px avatar slot at a 450px iframe width. */
+        .comment-avatar-window-lower[data-avatar-layout="lower"]:not([hidden]) {
+          top: 69px;
+          transform: none;
+        }
+      }
       .comment-avatar-window[hidden] { display: none; }
 
       #comment-popup {
@@ -1795,17 +1849,17 @@
       }
 
       h4#comment-post-message,
-      .comment-thread-toggle,
-      .thread-toggle,
-      .continue,
-      .loadmore,
-      .paging-control-container,
+      .comments .comment-thread-toggle,
+      .comments .thread-toggle,
+      .comments .continue,
+      .comments .loadmore,
+      .comments .paging-control-container,
       .titlewrapper,
       .quickedit,
       .post-feeds,
       #Attribution1,
-      .thread-count,
-      .icon.action {
+      .comments .thread-count,
+      .comments .icon.action {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -1823,9 +1877,9 @@
         padding-bottom: 0 !important;
       }
 
-      /* Keep comment entrances tied to their current scroll position. */
+      /* Keep comment entrances tied to their current scroll position on desktop pointers. */
       @supports (animation-timeline: view()) {
-        @media (prefers-reduced-motion: no-preference) {
+        @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
           #comment-holder .comment {
             animation: card-rise linear both;
             animation-timeline: view();
@@ -1882,6 +1936,9 @@
         padding: 0;
         min-height: auto;
         border: none;
+        color: inherit;
+        cursor: default;
+        pointer-events: none;
         transition: none;
       }
 
@@ -1947,7 +2004,11 @@
       }
 
       .comments .comment-content { transition: none !important; }
-      .comment-content a { transition: none; }
+      .comment-content a {
+        text-decoration: underline;
+        text-underline-offset: 0.14em;
+        transition: none;
+      }
 
       /* Keep embedded comment content inside the reading column. */
       .comment-content img,
@@ -2091,12 +2152,12 @@
         position: absolute !important;
       }
 
-      .yt-branch {
+      .yt-branch,
+      .reply-toggle-btn::before {
         display: block !important;
         position: absolute !important;
         box-sizing: border-box !important;
         left: -17px !important;
-        top: -20px !important;
         width: 17px !important;
         height: 32px !important;
         border-left: 2px solid var(--comment-line-color) !important;
@@ -2104,9 +2165,13 @@
         border-bottom-left-radius: 16px !important;
         border-top: none !important;
         border-right: none !important;
-        background-color: transparent !important;
         z-index: 1 !important;
         pointer-events: none !important;
+      }
+
+      .yt-branch {
+        top: -20px !important;
+        background-color: transparent !important;
       }
 
       /* Asymmetric fold: decelerating open, quicker calm close. */
@@ -2178,20 +2243,7 @@
 
       .reply-toggle-btn::before {
         content: '' !important;
-        display: block !important;
-        position: absolute !important;
-        box-sizing: border-box !important;
-        left: -17px !important;
         top: -16px !important;
-        width: 17px !important;
-        height: 32px !important;
-        border-left: 2px solid var(--comment-line-color) !important;
-        border-bottom: 2px solid var(--comment-line-color) !important;
-        border-bottom-left-radius: 16px !important;
-        border-top: none !important;
-        border-right: none !important;
-        pointer-events: none !important;
-        z-index: 1 !important;
       }
 
       /* Give touch controls a comfortable target without changing desktop rhythm. */
@@ -2242,19 +2294,7 @@
         border: none;
         /* Matches the header .action-btn treatment. */
         color: var(--icon-color);
-        transition: background 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
-      }
-
-      .social-links a:hover {
-        background: var(--btn-bg);
-        color: var(--accent-color);
-        transform: translateY(-2px);
-        transition: var(--hover-spring);
-      }
-
-      .social-links a:active {
-        transform: scale(0.92);
-        transition-duration: 0.1s;
+        transition: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), transform 0.3s var(--ease);
       }
 
       .social-links svg {
@@ -2272,8 +2312,12 @@
       }
 
       /* Mobile layout */
-      @media (max-width: 600px) and (prefers-reduced-transparency: no-preference) {
-        :root { --glass-blur: blur(14px) saturate(150%); }
+      /* Unknown transparency queries must not leave phones at the desktop blur. */
+      @media (max-width: 600px) {
+        :root { --glass-blur: blur(8px) saturate(140%); }
+      }
+      @media (max-width: 600px) and (prefers-reduced-transparency: reduce) {
+        :root { --glass-blur: none; }
       }
 
       @media (max-width: 600px) {
@@ -2284,25 +2328,18 @@
           --comment-form-shadow: 0 1px 2px rgba(0, 0, 0, 0.09), 0 5px 16px rgba(0, 0, 0, 0.08);
         }
 
-        /* Avoid animating large raster filters on phones. */
-        .post-body img { transition: transform 0.5s var(--ease-out); }
-        .featured-img-wrapper img { transition: transform 0.6s var(--ease-out); }
-
         .outer-wrapper { padding: 0 20px; }
         .site-header { padding: 60px 0 20px; }
         .logo-mark { width: 65px; height: 65px; }
         .header-logo-link { gap: 12px; }
-        .header-title h1 { font-size: 1.8rem; line-height: 1.3; }
+        .header-title h1 { font-size: 1.8rem; }
 
         h2.post-title {
           font-size: 1.4rem;
           line-height: 1.4;
           max-width: 100%;
           min-width: 0;
-          overflow-wrap: anywhere;
-          word-break: break-all;
           line-break: anywhere;
-          text-wrap: auto;
         }
 
         .listing-header { margin-bottom: 40px; }
@@ -2425,7 +2462,7 @@
         padding: 0;
         border: 0;
         appearance: none;
-        /* Hover thickens via scaleY, not height - transform stays on the compositor. */
+        /* Interaction thickens via scaleY, not height. */
         transform-origin: bottom;
         background: var(--border-color);
         opacity: 0;
@@ -2438,15 +2475,14 @@
         opacity: 1;
         pointer-events: auto;
       }
-      /* Keep a central 44px target without blocking the full footer width. */
+      /* Use the full bottom 44px as the return-to-top target. */
       .reading-bar::before {
         content: '';
         position: absolute;
-        left: 50%;
+        left: 0;
+        right: 0;
         bottom: 0;
-        width: min(180px, 100vw);
         height: 44px;
-        transform: translateX(-50%);
       }
       .reading-bar .bar-fill {
         height: 100%;
@@ -2457,9 +2493,23 @@
         transition: background-color 0.3s var(--ease);
         will-change: transform;
       }
-      /* Thicken slightly on hover to signal it's interactive */
-      .reading-bar:hover {
+      .reading-bar:active {
         transform: scaleY(1.7);
+      }
+      /* Keep hover feedback on devices with real hover. */
+      @media (hover: hover) and (pointer: fine) {
+        .reading-bar:hover {
+          transform: scaleY(1.7);
+        }
+      }
+      /* Keep brief touch feedback visible and responsive. */
+      @media (hover: none), (pointer: coarse) {
+        .reading-bar {
+          transition: opacity 0.5s var(--ease), transform 0.08s var(--ease-out), background 0.3s var(--ease);
+        }
+        .reading-bar:active {
+          transform: scaleY(2);
+        }
       }
 
       /* Hint pill above the bar - glass capsule, bilingual via lang spans. */
@@ -2582,7 +2632,7 @@
       }
       @media (hover: hover) and (pointer: fine) {
         .mascot.is-ready:not(.is-hidden):not(.is-tucked):not(.mascot-dragging):not(.mascot-resizing) .mascot-img {
-          animation: mascot-bob 4.5s ease-in-out infinite;
+          animation: mascot-bob 4.5s ease-in-out 3;
         }
       }
       @keyframes mascot-bob {
@@ -2625,9 +2675,11 @@
       .mascot-dragging .mascot-bubble { opacity: 0 !important; }
       /* Smooth glide for edge-snap and double-tap-home */
       .mascot.mascot-snapping {
-        transition: left 0.34s var(--ease-out), top 0.34s var(--ease-out),
+        will-change: translate;
+        transition: translate 0.34s var(--ease-out),
                     opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
       }
+      .mascot-dragging { will-change: translate; }
       /* Speech bubble floats above the figure */
       .mascot-bubble {
         position: absolute;
@@ -2938,6 +2990,7 @@
       .mascot-reopen.is-settling {
         outline: none;
         box-shadow: var(--glass-drop), var(--glass-edge), inset 0 0 0 100px transparent;
+        will-change: translate;
       }
       .mascot-reopen.is-grabbing {
         border-radius: 50%;
@@ -2958,6 +3011,12 @@
         .mascot { width: 96px; left: 8px; max-width: min(140px, 40vw) !important; }
         .mascot-bubble { max-width: min(150px, calc(100vw - 24px)); font-size: 0.8rem; }
         .mascot-img { transition: none; }
+        .reading-hint:not(.is-shown),
+        .mascot-menu:not(.is-open),
+        .mascot-reopen:not(.is-visible) {
+          -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+        }
       }
 
       /* 404 hero - the mascot's moment; the corner companion's script bails when #error-404 is present. */
@@ -2978,7 +3037,7 @@
       @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
         .error-404 .error-mascot {
           animation: card-rise 0.6s var(--ease-out) backwards,
-                     mascot-bob 4.5s ease-in-out 0.6s infinite;
+                     mascot-bob 4.5s ease-in-out 0.6s 3;
         }
       }
       [data-theme="dark"] .error-mascot {
@@ -2998,7 +3057,7 @@
         padding: 10px 18px;
         font-size: 0.95rem;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        transition: background 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), border-color 0.3s var(--ease);
+        transition: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease), border-color 0.3s var(--ease);
       }
       .error-bubble::before {
         content: '';
@@ -3011,7 +3070,7 @@
         background: var(--bg-color);
         border-left: 1px solid var(--border-color);
         border-top: 1px solid var(--border-color);
-        transition: background 0.3s var(--ease), border-color 0.3s var(--ease);
+        transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease);
       }
       .error-code {
         font-family: var(--serif);
@@ -3043,6 +3102,13 @@
 
       /* Print: drop interactive chrome, black ink on white, links show their URL. */
       @media print {
+        :root {
+          color-scheme: light;
+          --bg-color: #fff;
+          --text-color: #000;
+          --meta-color: #555;
+          --border-color: #ddd;
+        }
         .top-actions,
         nav.main-nav,
         .blog-pager,
@@ -3069,7 +3135,8 @@
           padding: 0;
         }
         .post-body img {
-          box-shadow: none;
+          box-shadow: none !important;
+          filter: none !important;
           border: 1px solid #ddd;
         }
         /* Backgrounds usually don't print - swap the section-break motif for a plain short rule. */
@@ -3090,6 +3157,8 @@
         }
         .post-outer {
           page-break-inside: auto;
+          content-visibility: visible;
+          contain-intrinsic-size: none;
           /* Print cards without their transparent entrance frame. */
           animation: none !important;
           opacity: 1 !important;
@@ -3126,6 +3195,103 @@
         }
       }
       ]]></b:skin>
+
+    <script type='text/javascript'>
+      //<![CDATA[
+      // Set newspaper-style breaks before titles can paint.
+      (function() {
+        var TITLE_SELECTOR = 'h1,h2,h3,h4,h5,h6,.related-posts li a,.mascot-menu .menu-title';
+        var BREAK_PUNCT = /[，。；！？：、,.;:!?…—–]/;
+        var CLOSING_PUNCT = /[”’」』》〉】〕）)\]]/;
+        var BREAK_ATTR = 'data-newspaper-break';
+
+        var visualLines = function(title) {
+          var lines = [];
+          var walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT);
+          var node;
+          while ((node = walker.nextNode())) {
+            for (var offset = 0, value = node.nodeValue || ''; offset < value.length;) {
+              var end = offset + (value.codePointAt(offset) > 0xffff ? 2 : 1);
+              var text = value.slice(offset, end);
+              if (/\s/.test(text)) { offset = end; continue; }
+              var range = document.createRange();
+              range.setStart(node, offset); range.setEnd(node, end);
+              var rect = range.getBoundingClientRect();
+              if (!rect.width && !rect.height) { offset = end; continue; }
+              var line = lines[lines.length - 1];
+              if (!line || rect.top >= line.bottom - 1) {
+                line = { bottom: rect.bottom, chars: [] };
+                lines.push(line);
+              } else {
+                line.bottom = Math.max(line.bottom, rect.bottom);
+              }
+              line.chars.push({ node: node, end: end, text: text });
+              offset = end;
+            }
+          }
+          return lines;
+        };
+
+        var preferredBreak = function(line) {
+          var index = line.length - 1;
+          while (index >= 0 && CLOSING_PUNCT.test(line[index].text)) index--;
+          if (index >= 0 && BREAK_PUNCT.test(line[index].text)) return null;
+          var point = null;
+          for (var i = 0; i < line.length - 1; i++) {
+            if (!BREAK_PUNCT.test(line[i].text)) continue;
+            var end = i;
+            while (end + 1 < line.length && CLOSING_PUNCT.test(line[end + 1].text)) end++;
+            if (end < line.length - 1) point = line[end];
+            i = end;
+          }
+          return point;
+        };
+
+        var typesetTitle = function(title) {
+          title.querySelectorAll('br[' + BREAK_ATTR + ']').forEach(function(br) { br.remove(); });
+          title.normalize();
+          if (!title.getClientRects().length || title.querySelector('br')) return;
+
+          for (var pass = 0; pass < 12; pass++) {
+            var lines = visualLines(title);
+            var point = null;
+            for (var i = 0; i < lines.length - 1; i++) {
+              point = preferredBreak(lines[i].chars);
+              if (point) break;
+            }
+            if (!point) break;
+            var br = document.createElement('br');
+            br.setAttribute(BREAK_ATTR, '');
+            br.setAttribute('aria-hidden', 'true');
+            var parent = point.node.parentNode;
+            parent.insertBefore(br, point.end < point.node.nodeValue.length
+              ? point.node.splitText(point.end)
+              : point.node.nextSibling);
+          }
+        };
+
+        window.__rinuanTypesetTitles = function(root) {
+          if (!root || !root.querySelectorAll) return;
+          var run = function(title) { try { typesetTitle(title); } catch (e) {} };
+          if (root.matches && root.matches(TITLE_SELECTOR)) run(root);
+          root.querySelectorAll(TITLE_SELECTOR).forEach(run);
+        };
+
+        var resizeFrame = 0;
+        var titleViewportWidth = window.innerWidth;
+        var typesetDocument = function() { window.__rinuanTypesetTitles(document); };
+        window.addEventListener('resize', function() {
+          if (window.innerWidth === titleViewportWidth) return;
+          titleViewportWidth = window.innerWidth;
+          cancelAnimationFrame(resizeFrame);
+          resizeFrame = requestAnimationFrame(typesetDocument);
+        }, { passive: true });
+        if (document.fonts && document.fonts.addEventListener) {
+          document.fonts.addEventListener('loadingdone', typesetDocument);
+        }
+      })();
+      //]]>
+    </script>
   </head>
   <body>
     <a class='skip-link' href='#main-content'><span class='lang-zh'>跳到正文</span><span class='lang-en'>Skip to content</span></a>
@@ -3154,9 +3320,7 @@
           };
           window.__rinuanMonths = ['January','February','March','April','May','June',
                                    'July','August','September','October','November','December'];
-          // Unknown tags keep their original text - a broken translation is worse than none.
-          // hasOwnProperty: the tag can come from the URL, and a crafted name like
-          // "constructor" would otherwise hit the prototype and render "undefined".
+          // Keep unknown URL tags unchanged and ignore inherited prototype keys.
           window.__rinuanGetTx = function(tag) {
               return Object.prototype.hasOwnProperty.call(DICT, tag) ? DICT[tag] : { zh: tag, en: tag };
           };
@@ -3279,6 +3443,7 @@
           </b:widget>
         </b:section>
       </header>
+      <script type='text/javascript'>if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(document.querySelector('.site-header'));</script>
 
       <b:section class='nav-section' id='nav-section' maxwidgets='1' showaddelement='yes'>
         <b:widget id='Label1' locked='false' title='Menu' type='Label' version='2' visible='true'>
@@ -3327,9 +3492,7 @@
 
       <script type='text/javascript'>
         //<![CDATA[
-        // Nav finalized right after it parses, before the page content: tag translation,
-        // current-section marker, and overflow mode all land pre-paint on EVERY view
-        // (a pass at the bottom of body lets a slow load paint the raw nav first).
+        // Finalize navigation state before page content can paint.
         (function() {
             if (window.__rinuanTranslateTags) window.__rinuanTranslateTags(document);
             var nav = document.querySelector('nav.main-nav');
@@ -3366,9 +3529,7 @@
                 e.preventDefault();
                 nav.scrollLeft += e.deltaY;
             };
-            // Enter scroll mode only when the tabs actually overflow. The non-passive
-            // wheel listener binds only then: kept permanent, it would force every
-            // wheel tick over the nav to wait on JS before the page can scroll.
+            // Bind wheel handling only while tabs overflow.
             var wheelBound = false;
             var checkQueued = false;
             var check = function() {
@@ -3505,7 +3666,7 @@
                 <div class='blog-posts'>
                   <b:loop index='i' values='data:posts' var='post'>
                     <article class='post-outer'>
-                      <!-- Server-set English typography: first paint is final; the JS pass then applies identical values. -->
+                      <!-- Server-set English typography; the JS pass mirrors the class on appended posts. -->
                       <b:class cond='data:post.labels and (data:post.labels any (l =&gt; l.name == &quot;English&quot;))' name='post-en'/>
                       <b:include data='post' name='post'/>
                     </article>
@@ -3540,7 +3701,7 @@
               <div class='comments-wrapper'>
                 <!-- Reserve the compact height until Blogger confirms the editor size. -->
                 <b:class cond='data:post.allowNewComments' name='show-main-form'/>
-                <h3>
+                <h3 id='comments-title'>
                   <span class='lang-zh'><span class='variant-simp'>留言与评论</span><span class='variant-trad'>留言與評論</span></span>
                   <span class='lang-en'>Comments</span>
                 </h3>
@@ -3625,7 +3786,7 @@
                 </b:if>
                 <div class='post-body snippet-content'><b:eval expr='snippet(data:post.body, { length: 160, links: false, linebreaks: true })'/></div>
                 <a class='read-more' expr:href='data:post.url' expr:title='data:post.title'>
-                  <span aria-hidden='true'>
+                  <span>
                     <span class='lang-zh'>阅读全文</span><span class='lang-en'>Read More</span>
                   </span>
                   <span style='position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;'>
@@ -3647,9 +3808,7 @@
                     </div>
                     <script type='text/javascript'>
                       //<![CDATA[
-                      // Related links sit below the article. The section is CSS-hidden
-                      // until filled (.related-posts:not(.is-loaded)), so it never shows a
-                      // heading over an empty list - it appears already complete, or not at all.
+                      // Keep related posts hidden until the list is complete.
                       (() => {
                         const list = document.getElementById('related-posts-list');
                         if (!list) return;
@@ -3705,7 +3864,10 @@
                           }
                           // Reveal only once populated; on no results it stays hidden.
                           if (count) {
-                            if (wrapper) wrapper.classList.add('is-loaded');
+                            if (wrapper) {
+                              wrapper.classList.add('is-loaded');
+                              if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(wrapper);
+                            }
                             if (window.__rinuanToVariant) { window.__rinuanToVariant(list); }
                           }
                           cleanupRelatedPosts();
@@ -3790,7 +3952,7 @@
               <script type='text/javascript'>blogger.widgets.blog.initThreadedComments(<data:post.commentJso/>,<data:post.commentMsgs/>,<data:post.commentConfig/>);</script>
             </b:includable>
             <b:includable id='threadedComments' var='post'>
-              <section class='comments threaded' expr:data-embed='data:post.embedCommentForm' expr:data-num-comments='data:post.numberOfComments' id='comments'>
+              <section aria-labelledby='comments-title' class='comments threaded' expr:data-embed='data:post.embedCommentForm' expr:data-num-comments='data:post.numberOfComments' id='comments'>
                 <div class='comment-footer'>
                   <b:if cond='data:post.allowNewComments'>
                     <b:include data='post' name='threadedCommentForm'/>
@@ -3799,7 +3961,7 @@
                   </b:if>
                 </div>
                 <div class='comments-content'>
-                  <b:if cond='data:post.embedCommentForm'>
+                  <b:if cond='data:post.embedCommentForm and data:post.numberOfComments &gt; 0'>
                     <b:include data='post' name='threadedCommentJs'/>
                   </b:if>
                   <div id='comment-holder'>
@@ -3817,60 +3979,21 @@
           </b:widget>
         </b:section>
       </main>
+      <script type='text/javascript'>if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(document.getElementById('main-content'));</script>
 
       <script type='text/javascript'>
         //<![CDATA[
-        // Synchronous title wrap (zero flash); exposed so infinite scroll can wrap appended titles too.
-        (function() {
-            // new RegExp, not a literal: a literal lookbehind is a PARSE error on old
-            // Safari and would kill this whole script block, not just the wrap.
-            let PUNCT = null;
-            try { PUNCT = new RegExp('(?<=[，。；！？：、:])'); } catch (e) {}
-            const wrap = function(el) {
-                if (!el || !PUNCT) return;
-                const parts = el.textContent.split(PUNCT).filter(Boolean);
-                if (parts.length <= 1) return;
-                el.innerHTML = '';
-                parts.forEach(function(part) {
-                    const chunk = document.createElement('span');
-                    chunk.className = 'title-chunk';
-                    chunk.textContent = part;
-                    el.appendChild(chunk);
-                });
-            };
-            // List pages: <h2><a>; single posts: text directly in <h2>.
-            window.__rinuanWrapTitles = function(root) {
-                root.querySelectorAll('h2.post-title').forEach(function(h2) {
-                    wrap(h2.querySelector('a') || h2);
-                });
-            };
-            // Header site title (:last-child - the first span child is the logo mark).
-            wrap(document.querySelector('.header-logo-link > span:last-child'));
-            window.__rinuanWrapTitles(document);
-        })();
-
         // Desktop margin rails - date (left) + read time (right); pure decoration on single posts, >=1024px.
         (function() {
             const postBody = document.querySelector('.post-body.full-content');
             if (!postBody) return;
 
-            // Date, in reliability order: .post-meta text, .date-header, or the YYYY/MM URL segment.
+            // Read the semantic post date, with dated URLs as a fallback.
             const parseDate = function() {
-                const meta = document.querySelector('.post-meta');
-                if (meta) {
-                    for (let i = 0; i < meta.childNodes.length; i++) {
-                        const n = meta.childNodes[i];
-                        if (n.nodeType === 3 && n.textContent.trim()) {
-                            const d = new Date(n.textContent.trim());
-                            if (!isNaN(d.getTime())) return d;
-                            break;
-                        }
-                    }
-                }
-                const sibling = document.querySelector('.date-header');
-                if (sibling) {
-                    const ds = new Date(sibling.textContent.trim());
-                    if (!isNaN(ds.getTime())) return ds;
+                const time = document.querySelector('.post-date[datetime]');
+                if (time) {
+                    const date = new Date(time.getAttribute('datetime'));
+                    if (!isNaN(date.getTime())) return date;
                 }
                 const m = window.location.pathname.match(/\/(\d{4})\/(\d{2})\//);
                 if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, 1);
@@ -3970,6 +4093,7 @@
                 return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             };
             const toTop = function() {
+                bar.blur();
                 window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' });
             };
             bar.addEventListener('click', toTop);
@@ -3988,21 +4112,26 @@
                 hint.classList.remove('is-shown');
             };
             // Desktop: reveal while hovering the bar.
-            bar.addEventListener('mouseenter', function() { showHint(0); });
-            bar.addEventListener('mouseleave', function() { hideHint(); });
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                bar.addEventListener('mouseenter', function() { showHint(0); });
+                bar.addEventListener('mouseleave', function() { hideHint(); });
+            }
 
             let appeared = false;
             let completedHinted = false;
             let barActive = false;
             let ticking = false;
-            // Cache the article's document-bottom (no layout read per frame).
+            // Cache article bounds so page chrome never counts as reading progress.
+            let articleDocTop = 0;
             let articleDocBottom = 0;
             let measureArticleRAF = 0;
             let refreshProgressAfterMeasure = function() {};
             const measureArticle = function() {
                 measureArticleRAF = 0;
-                articleDocBottom = articleBody.getBoundingClientRect().bottom +
-                    (window.scrollY || document.documentElement.scrollTop);
+                const rect = articleBody.getBoundingClientRect();
+                const scrollTop = window.scrollY || document.documentElement.scrollTop;
+                articleDocTop = rect.top + scrollTop;
+                articleDocBottom = rect.bottom + scrollTop;
                 refreshProgressAfterMeasure();
             };
             const scheduleMeasureArticle = function() {
@@ -4014,11 +4143,11 @@
             const update = function() {
                 ticking = false;
                 const scrollTop = window.scrollY || document.documentElement.scrollTop;
-                const target = Math.max(1, articleDocBottom - window.innerHeight);
-                const pct = Math.min(1, Math.max(0, scrollTop / target));
+                const target = Math.max(1, articleDocBottom - articleDocTop - window.innerHeight);
+                const pct = Math.min(1, Math.max(0, (scrollTop - articleDocTop) / target));
                 fill.style.transform = 'scaleX(' + pct.toFixed(4) + ')';
 
-                const active = scrollTop > window.innerHeight * 0.6;
+                const active = scrollTop > articleDocTop;
                 // State writes only on change, not per scroll frame.
                 if (active !== barActive) {
                     barActive = active;
@@ -4034,8 +4163,12 @@
                     completedHinted = true;
                     showHint(2000);
                 }
-                // Tuck the hint away if we're back at the very top.
-                if (!active) hideHint();
+                // Re-arm both hints after returning to the top.
+                if (!active) {
+                    appeared = false;
+                    completedHinted = false;
+                    hideHint();
+                }
             };
             const onScroll = function() {
                 if (!ticking) {
@@ -4088,12 +4221,10 @@
             wrap.innerHTML =
                 '<div class="mascot-bubble" aria-hidden="true"><span class="mascot-text"></span></div>' +
                 // The decorative figure stays hidden from assistive technology.
-                '<img class="mascot-img" alt="" draggable="false" decoding="async" width="400" height="600"/>';
+                '<img class="mascot-img" alt="" draggable="false" decoding="async" fetchpriority="low" width="400" height="600"/>';
             document.body.appendChild(wrap);
 
-            // Settings gear + menu live in the top-right toggle bar, not floating by the
-            // figure. The menu is a body-level popover so it stays reachable while the
-            // figure is tucked or hidden.
+            // Keep the settings popover reachable while the mascot is tucked or hidden.
             var topActions = document.querySelector('.top-actions');
             var gear = document.createElement('button');
             gear.className = 'action-btn';
@@ -4134,6 +4265,7 @@
                 '<hr/>' +
                 '<button type="button" class="menu-hide" data-act="hide">' + L('收起看板娘', '收起看板娘', 'Hide mascot') + '</button>';
             document.body.appendChild(menu);
+            if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(menu);
 
             // Re-open handle - a light inline icon, no image to download.
             var reopen = document.createElement('button');
@@ -4605,8 +4737,7 @@
             // Drag to reposition (remembered) + tap to react
             var POS_KEY = 'mascotPos';
             var dragging = false, moved = false, sx = 0, sy = 0, baseLeft = 0, baseTop = 0;
-            // Figure size, cached at drag start: reading offsetWidth per pointermove
-            // right after writing left/top forces a reflow on every frame.
+            // Cache figure geometry once; pointer moves only update a compositor translate.
             var dragW = 140, dragH = 200;
             var snapSide = null, tucked = false, tuckTimer = null, peekWarmTimer = null;
             var TUCK_DELAY = 7000;
@@ -4720,6 +4851,16 @@
             var cancelMotion = function() {
                 if (motionTimer) { clearTimeout(motionTimer); motionTimer = null; }
             };
+            var glideTo = function(left, top, startRect) {
+                var r = startRect || wrap.getBoundingClientRect();
+                wrap.style.transition = 'none';
+                applyPos(left, top);
+                wrap.style.translate = (r.left - left) + 'px ' + (r.top - top) + 'px';
+                wrap.classList.add('mascot-snapping');
+                void wrap.offsetWidth;
+                wrap.style.transition = '';
+                wrap.style.translate = '0 0';
+            };
             // On release, snap to the nearest edge (plain glide, no inertia) and remember the side.
             var snapToEdge = function() {
                 cancelMotion();
@@ -4731,11 +4872,11 @@
                 snapSide = toLeft ? 'left' : 'right';
                 wrap.classList.remove('tuck-left', 'tuck-right');
                 wrap.classList.add(toLeft ? 'tuck-left' : 'tuck-right');
-                wrap.classList.add('mascot-snapping');
-                applyPos(c.left, c.top);
+                glideTo(c.left, c.top, r);
                 savePos(c.left, c.top);
                 motionTimer = setTimeout(function() {
                     motionTimer = null;
+                    wrap.style.translate = '';
                     wrap.classList.remove('mascot-snapping');
                     scheduleTuck();
                 }, 360);
@@ -4759,11 +4900,11 @@
                 snapSide = null; tucked = false;
                 clearTuckTimers();
                 wrap.classList.remove('is-tucked', 'tuck-left', 'tuck-right');
-                wrap.classList.add('mascot-snapping');
-                applyPos(defLeft, window.innerHeight - h);
+                glideTo(defLeft, window.innerHeight - h);
                 try { localStorage.removeItem(POS_KEY); } catch (e) {}
                 motionTimer = setTimeout(function() {
                     motionTimer = null;
+                    wrap.style.translate = '';
                     wrap.classList.remove('mascot-snapping');
                     // hand back to CSS bottom-anchoring (same spot, now tracks bottom)
                     wrap.style.left = ''; wrap.style.top = ''; wrap.style.bottom = '';
@@ -4790,7 +4931,7 @@
                 }
                 if (!moved) return;
                 var c = dragClamp(baseLeft + dx, baseTop + dy);
-                applyPos(c.left, c.top);
+                wrap.style.translate = (c.left - baseLeft) + 'px ' + (c.top - baseTop) + 'px';
                 var offFrac = Math.max(-c.left / dragW, (c.left + dragW - window.innerWidth) / dragW,
                                        -c.top / dragH, (c.top + dragH - window.innerHeight) / dragH);
                 wrap.classList.toggle('mascot-will-hide', offFrac > 0.4);
@@ -4800,16 +4941,19 @@
                 if (e.isPrimary === false || (e.pointerType === 'mouse' && e.button !== 0)) return;
                 dragging = true; moved = false;
                 // Pin the visible position before dragging.
-                if (motionTimer || wrap.style.transition) {
+                if (motionTimer || wrap.style.transition || wrap.style.translate) {
                     cancelMotion();
                     var rp = wrap.getBoundingClientRect();
-                    wrap.style.transition = '';
+                    wrap.style.transition = 'none';
                     wrap.style.transform = '';
                     wrap.style.opacity = '';
+                    wrap.style.translate = '';
                     wrap.classList.remove('mascot-will-hide');
+                    wrap.classList.remove('mascot-snapping');
                     applyPos(rp.left, rp.top);
+                    void wrap.offsetWidth;
+                    wrap.style.transition = '';
                 }
-                wrap.classList.remove('mascot-snapping');
                 var r = wrap.getBoundingClientRect();
                 baseLeft = r.left; baseTop = r.top;
                 dragW = r.width || 140; dragH = r.height || 200;
@@ -4832,12 +4976,17 @@
                     applyDragFrame();
                 }
                 dragging = false;
+                var rr = null;
+                if (moved) {
+                    rr = wrap.getBoundingClientRect();
+                    wrap.style.translate = '';
+                    applyPos(rr.left, rr.top);
+                }
                 wrap.classList.remove('mascot-dragging');
                 imgEl.style.cursor = 'grab';
                 try { imgEl.releasePointerCapture(e.pointerId); } catch (er) {}
                 if (moved) {
                     wrap.classList.remove('mascot-will-hide');
-                    var rr = wrap.getBoundingClientRect();
                     // ~40%+ past an edge on release -> hide; else snap back.
                     var offFrac = Math.max(-rr.left / rr.width, (rr.right - window.innerWidth) / rr.width,
                                            -rr.top / rr.height, (rr.bottom - window.innerHeight) / rr.height);
@@ -4849,6 +4998,7 @@
                     }
                     return;
                 }
+                if (e.type === 'pointercancel') return;
                 // Tucked taps still react after untucking.
                 if (tucked) { untuck(); reactToClick(); return; }
                 // Distinguish single tap (line) from double tap (go home).
@@ -4865,9 +5015,7 @@
             };
             imgEl.addEventListener('pointerup', endDrag);
             imgEl.addEventListener('pointercancel', endDrag);
-            // Coalesce to one layout pass per frame, like the scroll handlers - a raw
-            // resize handler here ran applySize (write) then clampPos (read) then applyPos
-            // (write), forcing a reflow on every event during a window drag-resize.
+            // Coalesce resize work to one layout pass per frame.
             var mascotResizeRAF = 0;
             window.addEventListener('resize', function() {
                 if (mascotResizeRAF) return;
@@ -4883,11 +5031,9 @@
             }, { passive: true });
             restorePos();
 
-            var themeSayTimer = null;
             var latestThemeIntent = 0;
             document.addEventListener('rinuan:theme-intent', function(e) {
                 latestThemeIntent = e.detail && e.detail.intentVersion || latestThemeIntent;
-                if (themeSayTimer) { clearTimeout(themeSayTimer); themeSayTimer = null; }
                 if (bubbleTimer) { clearTimeout(bubbleTimer); bubbleTimer = null; }
                 bubble.classList.remove('is-shown');
             });
@@ -4896,14 +5042,9 @@
                 var t = e.detail.theme;
                 var intentVersion = e.detail.intentVersion || 0;
                 latestThemeIntent = Math.max(latestThemeIntent, intentVersion);
-                // Rapid toggles replace the pending reaction; the theme queue emits only
-                // its settled user choice, so one art swap and one bubble remain.
-                if (themeSayTimer) clearTimeout(themeSayTimer);
-                themeSayTimer = setTimeout(function() {
-                    themeSayTimer = null;
-                    if (intentVersion !== latestThemeIntent) return;
-                    say(pick(t === 'dark' ? THEME.dark : THEME.light));
-                }, 180);
+                // Theme-change arrives after the shared transition has settled.
+                if (intentVersion !== latestThemeIntent) return;
+                say(pick(t === 'dark' ? THEME.dark : THEME.light));
             });
 
             var nav = document.querySelector('nav.main-nav');
@@ -5002,7 +5143,10 @@
                     y = r.top + r.height / 2;
                 }
                 placeReopen(side, y);
+                cancelMotion();
+                wrap.classList.remove('mascot-snapping');
                 wrap.style.transition = 'none';
+                wrap.style.translate = '';
                 wrap.style.transformOrigin = (side === 'right' ? 'right' : 'left') + ' bottom';
                 void wrap.offsetWidth; // commit the start frame
                 wrap.style.transition = 'opacity 0.2s var(--ease), transform 0.2s var(--ease-out)';
@@ -5021,6 +5165,7 @@
                     dismissAnimTimer = null;
                     wrap.classList.add('is-hidden'); // fully out
                     wrap.style.transition = ''; wrap.style.transform = ''; wrap.style.opacity = '';
+                    wrap.style.translate = '';
                     wrap.style.transformOrigin = '';
                     wrap.style.left = ''; wrap.style.top = ''; wrap.style.bottom = '';
                 }, 210);
@@ -5030,6 +5175,7 @@
                 ensureLoaded();
                 // Clear any in-flight exit-animation styles before re-showing.
                 wrap.style.transition = ''; wrap.style.transform = ''; wrap.style.opacity = '';
+                wrap.style.translate = '';
                 wrap.style.transformOrigin = '';
                 // Emerge where the reopen handle sat, not the default corner.
                 var pos = null;
@@ -5060,7 +5206,7 @@
             reopen.style.touchAction = 'none';
             var reDragging = false, reMoved = false, reSX = 0, reSY = 0,
                 reBaseLeft = 0, reBaseTop = 0, reW = 46, reH = 46, reSwallowClick = false;
-            var reDragFrame = 0, reClientX = 0, reClientY = 0;
+            var reDragFrame = 0, reClientX = 0, reClientY = 0, reSettleTimer = 0;
             var applyReopenDragFrame = function() {
                 reDragFrame = 0;
                 if (!reDragging) return;
@@ -5072,19 +5218,24 @@
                     reopen.blur();
                 }
                 if (!reMoved) return;
-                reopen.style.left = Math.max(4, Math.min(window.innerWidth - reW - 4, reBaseLeft + dx)) + 'px';
-                reopen.style.top = Math.max(4, Math.min(window.innerHeight - reH - 4, reBaseTop + dy)) + 'px';
-                reopen.style.bottom = 'auto';
+                var left = Math.max(4, Math.min(window.innerWidth - reW - 4, reBaseLeft + dx));
+                var top = Math.max(4, Math.min(window.innerHeight - reH - 4, reBaseTop + dy));
+                reopen.style.translate = (left - reBaseLeft) + 'px ' + (top - reBaseTop) + 'px';
             };
             reopen.addEventListener('pointerdown', function(e) {
                 if (e.isPrimary === false || (e.pointerType === 'mouse' && e.button !== 0)) return;
                 reDragging = true; reMoved = false; reSwallowClick = false;
-                reopen.classList.remove('is-settling');
+                if (reSettleTimer) { clearTimeout(reSettleTimer); reSettleTimer = 0; }
                 var r = reopen.getBoundingClientRect();
+                reopen.style.transition = 'none';
+                reopen.style.translate = '';
+                reopen.style.left = r.left + 'px';
+                reopen.style.top = r.top + 'px';
+                reopen.style.bottom = 'auto';
+                reopen.classList.remove('is-settling');
                 reBaseLeft = r.left; reBaseTop = r.top; reSX = e.clientX; reSY = e.clientY;
-                // Size cached here - per-move reads after left/top writes force reflows.
+                // Cache geometry once; pointer moves only update a compositor translate.
                 reW = r.width || 46; reH = r.height || 46;
-                reopen.style.transition = 'none'; // follow the finger 1:1
                 try { reopen.setPointerCapture(e.pointerId); } catch (er) {}
             });
             reopen.addEventListener('pointermove', function(e) {
@@ -5103,27 +5254,34 @@
                 reDragging = false;
                 try { reopen.releasePointerCapture(e.pointerId); } catch (er) {}
                 if (reMoved) {
-                    reSwallowClick = true; // a drag isn't a summon
+                    reSwallowClick = e.type !== 'pointercancel'; // a drag isn't a summon
                     var r = reopen.getBoundingClientRect();
                     var side = (r.left + r.width / 2) < window.innerWidth / 2 ? 'left' : 'right';
                     var y = r.top + r.height / 2;
                     reopen.style.transition = 'none';
+                    reopen.style.translate = '';
                     reopen.style.left = r.left + 'px';
                     reopen.style.top = r.top + 'px';
                     reopen.style.bottom = 'auto';
-                    void reopen.offsetWidth; // commit the start frame
-                    reopen.style.transition = 'left 0.18s var(--ease-out), top 0.18s var(--ease-out), ' +
-                                              'border-radius 0.18s var(--ease-out), box-shadow 0.18s var(--ease)';
                     reopen.classList.add('is-settling');
-                    reopen.classList.remove('is-grabbing'); // disc -> edge tab (morphs)
-                    placeReopen(side, y); // glide home to the edge
+                    placeReopen(side, y);
+                    var target = reopen.getBoundingClientRect();
+                    reopen.style.translate = (r.left - target.left) + 'px ' + (r.top - target.top) + 'px';
+                    void reopen.offsetWidth;
+                    reopen.style.transition = 'translate 0.18s var(--ease-out), ' +
+                                              'border-radius 0.18s var(--ease-out), box-shadow 0.18s var(--ease)';
+                    reopen.classList.remove('is-grabbing');
+                    reopen.style.translate = '0 0';
                     try { localStorage.setItem(REOPEN_KEY, JSON.stringify({ side: side, y: Math.round(y) })); } catch (er) {}
-                    setTimeout(function() {
+                    reSettleTimer = setTimeout(function() {
+                        reSettleTimer = 0;
                         reopen.style.transition = '';
+                        reopen.style.translate = '';
                         reopen.classList.remove('is-settling');
                     }, 240);
                 } else {
                     reopen.style.transition = '';
+                    reopen.style.translate = '';
                 }
             };
             reopen.addEventListener('pointerup', reEnd);
@@ -5256,7 +5414,7 @@
                 } catch (e) {}
                 reopen.classList.add('is-visible');   // gear already starts collapsed (set at creation)
             } else {
-                // Demand-load decorative art to keep it out of the first-load image audit.
+                // Load decorative art only after the deferred mascot bootstrap.
                 var mascotArmed = false;
                 var removeMascotArming = function() {
                     ['pointermove', 'touchstart', 'keydown', 'scroll'].forEach(function(ev) {
@@ -5283,14 +5441,15 @@
                 ['pointermove', 'touchstart', 'keydown', 'scroll'].forEach(function(ev) {
                     window.addEventListener(ev, armMascot, { once: true, passive: true });
                 });
-                if (bootFromInteraction) armMascot();
+                if (bootFromInteraction || window.innerWidth <= 600) armMascot();
             }
             };
 
-            // Keep the decorative companion off the critical path: initialise on
-            // first idle time, or immediately if the visitor interacts first.
+            // Coarse pointers initialise only during idle, never inside the first tap.
             var booted = false;
-            var bootEvents = ['pointermove', 'touchstart', 'keydown', 'scroll'];
+            var bootEvents = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+                ? ['pointermove', 'keydown', 'scroll']
+                : [];
             var removeBootEvents = function() {
                 bootEvents.forEach(function(ev) { window.removeEventListener(ev, bootNow); });
             };
@@ -5375,6 +5534,8 @@
 
     </div>
 
+    <script type='text/javascript'>if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(document);</script>
+
     <script type='text/javascript'>
       //<![CDATA[
       // Bind controls before images finish loading.
@@ -5452,12 +5613,15 @@
             const rect = form && form.getBoundingClientRect();
             const visible = rect && rect.bottom > 0 && rect.top < window.innerHeight &&
                 rect.right > 0 && rect.left < window.innerWidth;
-            if (reduceContentMotion() || typeof document.startViewTransition !== "function" || !visible) {
+            // Read visibility before invalidating root styles.
+            if (reduceContentMotion() ||
+                typeof document.startViewTransition !== "function" || !visible) {
+                root.classList.add("is-theme-switching");
                 root.classList.remove("is-comment-view-transition");
                 applyTheme(theme);
                 return;
             }
-            root.classList.add("is-comment-view-transition");
+            root.classList.add("is-theme-switching", "is-comment-view-transition");
             const transition = document.startViewTransition(() => {
                 if (version === commentThemeTransitionVersion) applyTheme(theme);
             });
@@ -5475,29 +5639,51 @@
         };
         document.body.addEventListener("transitionend", event => {
             if (event.target !== document.body || event.propertyName !== "background-color") return;
-            if (root.getAttribute("data-theme") === desiredTheme) root.classList.remove("is-theme-switching");
+            if (root.getAttribute("data-theme") !== desiredTheme ||
+                !root.classList.contains("is-theme-switching")) return;
+            const settledTheme = desiredTheme;
+            const settledIntentVersion = themeIntentVersion;
+            root.classList.remove("is-theme-switching");
+            if (manualThemeChoice) {
+                requestAnimationFrame(() => {
+                    if (settledTheme === desiredTheme &&
+                        settledIntentVersion === themeIntentVersion &&
+                        root.getAttribute("data-theme") === settledTheme) {
+                        announceUserTheme(settledTheme, settledIntentVersion);
+                    }
+                });
+            }
         });
         const runThemeTransition = () => {
             const targetTheme = desiredTheme;
             const currentTheme = root.getAttribute("data-theme");
+            const intentVersion = themeIntentVersion;
             if (targetTheme === currentTheme) {
                 // Invalidate an older async View Transition update for the opposite theme.
                 commentThemeTransitionVersion++;
-                root.classList.remove("is-comment-view-transition");
-                root.classList.remove("is-theme-switching");
-                announceUserTheme(currentTheme, themeIntentVersion);
+                root.classList.remove("is-comment-view-transition", "is-theme-switching");
+                announceUserTheme(currentTheme, intentVersion);
                 return;
             }
             // One class plus one attribute update: foreground colours switch together,
             // while surface transitions safely retarget on rapid reversals.
-            root.classList.add("is-theme-switching");
             applyThemeWithCommentSnapshot(targetTheme);
             if (reduceContentMotion()) {
-                requestAnimationFrame(() => root.classList.remove("is-theme-switching"));
+                requestAnimationFrame(() => {
+                    if (targetTheme !== desiredTheme ||
+                        root.getAttribute("data-theme") !== targetTheme ||
+                        !root.classList.contains("is-theme-switching")) return;
+                    root.classList.remove("is-theme-switching");
+                    if (manualThemeChoice) announceUserTheme(targetTheme, intentVersion);
+                });
             }
-            announceUserTheme(targetTheme, themeIntentVersion);
         };
         if (themeToggle) {
+          // Keep the mobile editor focused so the keyboard cannot resize a theme snapshot.
+          themeToggle.addEventListener("mousedown", event => {
+            const editor = document.getElementById("comment-editor");
+            if (window.innerWidth <= 600 && document.activeElement === editor) event.preventDefault();
+          });
           themeToggle.addEventListener("click", () => {
             manualThemeChoice = true;
             desiredTheme = desiredTheme === "dark" ? "light" : "dark";
@@ -5518,7 +5704,6 @@
             try { savedTheme = localStorage.getItem("theme"); } catch (e) {}
             if (savedTheme === "light" || savedTheme === "dark") return;
             desiredTheme = event.matches ? "dark" : "light";
-            root.classList.add("is-theme-switching");
             applyThemeWithCommentSnapshot(desiredTheme);
             if (reduceContentMotion()) {
                 requestAnimationFrame(() => root.classList.remove("is-theme-switching"));
@@ -5529,6 +5714,7 @@
 
         // Language toggle logic.
         const langToggle = document.getElementById("lang-toggle");
+        const variantToggle = document.getElementById("variant-toggle");
         const syncToggleLabels = () => {
             if (langToggle) {
                 const isEnglish = root.getAttribute("data-lang") === "en";
@@ -5537,13 +5723,12 @@
                 langToggle.setAttribute("title", label);
                 langToggle.setAttribute("aria-pressed", isEnglish ? "true" : "false");
             }
-            const vt = document.getElementById("variant-toggle");
-            if (vt) {
+            if (variantToggle) {
                 const isTraditional = root.getAttribute("data-variant") === "trad";
                 const label = isTraditional ? "切換到簡體中文" : "切换到繁体中文";
-                vt.setAttribute("aria-label", label);
-                vt.setAttribute("title", label);
-                vt.setAttribute("aria-pressed", isTraditional ? "true" : "false");
+                variantToggle.setAttribute("aria-label", label);
+                variantToggle.setAttribute("title", label);
+                variantToggle.setAttribute("aria-pressed", isTraditional ? "true" : "false");
             }
             const commentEditor = document.getElementById("comment-editor");
             if (commentEditor) {
@@ -5570,6 +5755,7 @@
                 try { localStorage.setItem("lang", newLang); } catch (e) {}
                 syncToggleLabels();
                 announceEditorLocale();
+                if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(document);
             });
           });
         }
@@ -5604,10 +5790,12 @@
                 break;
               }
               if (currentNode.nodeValue.trim()) {
-                currentNode.nodeValue = applyConversion(currentNode.nodeValue);
+                const value = currentNode.nodeValue;
+                const converted = applyConversion(value);
+                if (converted !== value) currentNode.nodeValue = converted;
               }
               const idleLeft = deadline && typeof deadline.timeRemaining === "function" ? deadline.timeRemaining() : 0;
-              if (idleLeft <= 2 && Date.now() - start > 10) break;
+              if (Date.now() - start >= 10 || (deadline && !deadline.didTimeout && idleLeft <= 2)) break;
             }
             if (!complete) schedule(run);
             else if (done) done();
@@ -5630,6 +5818,7 @@
           }
           syncToggleLabels();
           announceEditorLocale();
+          if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(document);
           pendingVariant = null;
           persistVariant = true;
         };
@@ -5704,6 +5893,7 @@
                 const latestVariant = pendingVariant || root.getAttribute("data-variant");
                 if (token === conversionToken && latestVariant === "trad") {
                   syncChinesePostLangs(subtree, "trad");
+                  if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(subtree);
                 }
               }, token);
             } catch (e) {}
@@ -5719,7 +5909,6 @@
           }, 200);
         }
 
-        const variantToggle = document.getElementById("variant-toggle");
         if (variantToggle) {
           variantToggle.addEventListener("click", () => {
             if (initialVariantTimer) {
@@ -5727,7 +5916,7 @@
               initialVariantTimer = null;
             }
             triggerContentFade(done => {
-              loadOpenCC(root.getAttribute("data-variant") === "simp" ? "trad" : "simp", done);
+              loadOpenCC((pendingVariant || root.getAttribute("data-variant")) === "simp" ? "trad" : "simp", done);
               return true;
             });
           });
@@ -5738,24 +5927,22 @@
 
     <script type='text/javascript'>
       //<![CDATA[
-      // Runs synchronously (the script sits after all content): eyebrows, listing masthead,
-      // and tag translations paint in their final state instead of popping in at DOMContentLoaded.
+      // Run after parsed content so translated labels do not flash.
       (() => {
 
         // Process both initial and appended posts.
         const isFullPostView = !!document.querySelector('.post-body.full-content');
 
-        const isBloggerImageUrl = url => {
-            try {
-                const hostname = new URL(url, location.href).hostname.toLowerCase();
-                return hostname === "blogger.googleusercontent.com" ||
-                    hostname === "blogspot.com" || hostname.endsWith(".blogspot.com");
-            } catch (e) {
-                return false;
-            }
-        };
         const resizedBloggerImage = (url, width) => {
-            if (!url || !isBloggerImageUrl(url)) return "";
+            if (!url) return "";
+            let hostname;
+            try {
+                hostname = new URL(url, location.href).hostname.toLowerCase();
+            } catch (e) {
+                return "";
+            }
+            if (hostname !== "blogger.googleusercontent.com" &&
+                hostname !== "blogspot.com" && !hostname.endsWith(".blogspot.com")) return "";
             const sized = url
                 .replace(/\/(?:s|w)\d+(?:-[^/?#]+)?\//, "/w" + width + "/")
                 .replace(/=(?:s|w)\d+(?:-[^&#?]+)?(?=$|[&#?])/, "=w" + width);
@@ -5771,38 +5958,27 @@
                 img.setAttribute('sizes', '(max-width: 750px) calc(100vw - 40px), 700px');
             }
             const isPriorityImage = idx === 0 && isFullPostView;
-            img.setAttribute('loading', isPriorityImage ? 'eager' : 'lazy');
-            img.setAttribute('fetchpriority', isPriorityImage ? 'high' : 'low');
+            if (!img.hasAttribute('loading')) img.setAttribute('loading', isPriorityImage ? 'eager' : 'lazy');
+            if (!img.hasAttribute('fetchpriority')) img.setAttribute('fetchpriority', isPriorityImage ? 'high' : 'low');
         };
 
         function adjustPostTypography(root) {
             root.querySelectorAll('.post-outer').forEach(post => {
                 const body = post.querySelector('.post-body');
-                if (!body) return;
-                if (body.dataset.typographyAdjusted === '1') return;
+                if (!body || body.dataset.typographyAdjusted === '1') return;
                 body.dataset.typographyAdjusted = '1';
 
-                const tagNodes = post.querySelectorAll('.post-tag, .hidden-tag');
-                const tags = Array.from(tagNodes).map(t => {
+                const tags = Array.from(post.querySelectorAll('.post-tag, .hidden-tag')).map(t => {
                     const raw = t.getAttribute('data-raw-tag') || t.textContent;
                     return raw.trim().toLowerCase();
                 });
 
                 const isEnglish = tags.includes('english') || tags.includes('en');
                 const zhLang = document.documentElement.getAttribute('data-variant') === 'trad' ? 'zh-Hant' : 'zh-Hans';
+                post.classList.toggle('post-en', isEnglish);
                 if (isEnglish) {
-                    body.style.lineHeight = '1.7';
-                    body.style.textAlign = 'left';
-                    body.style.hyphens = 'auto';
-                    body.style.webkitHyphens = 'auto';
-                    body.style.wordSpacing = '0.05em';
                     body.setAttribute('lang', 'en');
                 } else {
-                    body.style.lineHeight = '2.2';
-                    body.style.textAlign = 'justify';
-                    body.style.hyphens = 'none';
-                    body.style.webkitHyphens = 'none';
-                    body.style.wordSpacing = 'normal';
                     body.setAttribute('lang', zhLang);
                 }
 
@@ -5821,10 +5997,7 @@
         adjustPostTypography(document);
 
         // List-card dates - fill each server-rendered <time class='card-date'> with bilingual display spans.
-        const CARD_EN_MONTHS = window.__rinuanMonths || [
-            'January','February','March','April','May','June',
-            'July','August','September','October','November','December'
-        ];
+        const CARD_EN_MONTHS = window.__rinuanMonths;
         function formatCardDates(root) {
             const notCategory = new Set(['中文', 'english', 'en', 'zh']);
             root.querySelectorAll('time.card-date').forEach(el => {
@@ -5950,12 +6123,14 @@
                             img.setAttribute('loading', 'lazy');
                             img.setAttribute('fetchpriority', 'low');
                         });
-                        if (window.__rinuanWrapTitles) window.__rinuanWrapTitles(tmp);
                         const appendedPosts = [];
                         while (tmp.firstChild) {
                             const post = tmp.firstChild;
                             list.appendChild(post);
                             appendedPosts.push(post);
+                        }
+                        if (window.__rinuanTypesetTitles) {
+                            appendedPosts.forEach(post => window.__rinuanTypesetTitles(post));
                         }
                         if (window.__rinuanToVariant) {
                             appendedPosts.forEach(post => window.__rinuanToVariant(post));
@@ -6010,6 +6185,25 @@
                 let mainToggleBusy = false;
                 let queuedMainToggle = false;
                 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                let commentThemeSnapshotWarmed = false;
+                // Warm the first mobile iframe snapshot after the editor is ready.
+                const warmCommentThemeSnapshot = () => {
+                    const root = document.documentElement;
+                    if (commentThemeSnapshotWarmed || reduceMotion() ||
+                        !window.matchMedia('(max-width: 600px)').matches ||
+                        typeof document.startViewTransition !== 'function' ||
+                        root.classList.contains('is-theme-switching')) return;
+                    commentThemeSnapshotWarmed = true;
+                    root.classList.add('is-comment-view-transition');
+                    const transition = document.startViewTransition(() => {});
+                    const cleanup = () => {
+                        if (!root.classList.contains('is-theme-switching')) {
+                            root.classList.remove('is-comment-view-transition');
+                        }
+                    };
+                    transition.ready.then(() => transition.skipTransition(), cleanup);
+                    transition.finished.then(cleanup, cleanup);
+                };
                 const beginFormAction = () => {
                     formActionToken++;
                     editorSettleVersion++;
@@ -6037,12 +6231,6 @@
                     button.setAttribute("aria-controls", customFormContainer.id);
                     button.setAttribute("aria-expanded", active ? "true" : "false");
                     button.innerHTML = active ? TEXT_CANCEL : TEXT_REPLY;
-                    if (active) {
-                        const comment = button.closest(".comment");
-                        const author = comment && comment.querySelector(".comment-author");
-                        const authorName = author ? author.textContent.trim() : "";
-                        if (authorName) button.appendChild(document.createTextNode(" · " + authorName));
-                    }
                 };
                 // Preserve Blogger's tokenized editor URL and skin fragment.
                 let editorUrlParts = null;
@@ -6079,15 +6267,13 @@
                 const syncEditorLoadingText = () => {
                     if (editorLoadingMask) editorLoadingMask.setAttribute('aria-label', editorLoadingText());
                 };
-                let editorLocale = currentEditorLocale();
                 let activeEditorParentId = null;
                 const mobileEditorUrlParts = src => {
                     const parts = src.split("#");
                     const url = new URL(parts[0], window.location.href);
                     url.searchParams.set("m", "1");
                     // Blogger emits the blog locale; the theme owns the editor locale.
-                    editorLocale = currentEditorLocale();
-                    url.searchParams.set("hl", editorLocale);
+                    url.searchParams.set("hl", currentEditorLocale());
                     return [url.href, parts[1] || ""];
                 };
                 const setEditorState = (state, iframe) => {
@@ -6100,6 +6286,7 @@
                         editorSettleVersion++;
                         if (editorHeightObserver) editorHeightObserver.disconnect();
                     }
+                    if (state === "ready") warmCommentThemeSnapshot();
                 };
                 const setEditorLoading = (iframe, loading) => {
                     if (loading) setEditorState("loading", iframe);
@@ -6246,9 +6433,7 @@
                     if (editorReloadPending && !force) return;
                     const parsed = Math.ceil(parseFloat(value));
                     if (!Number.isFinite(parsed) || parsed < MIN_EDITOR_HEIGHT || parsed > MAX_EDITOR_HEIGHT) return;
-                    // Blogger reports its generic 250px iframe default as "resized"
-                    // before the mobile editor publishes its real compact height.
-                    // Never promote that navigation bootstrap value to layout state.
+                    // Ignore Blogger's transient 250px bootstrap height.
                     if (parsed === BOOTSTRAP_EDITOR_HEIGHT &&
                         settledEditorHeight !== BOOTSTRAP_EDITOR_HEIGHT) return;
                     settledEditorHeight = parsed;
@@ -6269,9 +6454,7 @@
                 };
                 function normalizeClosedEditorHeight(iframe) {
                     if (!iframe || customFormContainer.classList.contains("is-expanded")) return;
-                    // Blogger always restores its compact editor when a hidden top form
-                    // becomes visible. Commit that baseline only after the close finishes,
-                    // so the next open cannot paint the stale expanded height first.
+                    // Restore the compact baseline only after closing.
                     applyEditorHeight(iframe, MIN_EDITOR_HEIGHT, true);
                     iframe.setAttribute("height", MIN_EDITOR_HEIGHT + "px");
                 }
@@ -6291,8 +6474,7 @@
                                 heightChanged = true;
                             }
                         }
-                        // Blogger commonly writes height and data-resized in one mutation
-                        // batch. Read the whole batch before deciding, independent of order.
+                        // Evaluate height and data-resized from the complete mutation batch.
                         if (editorReloadPending) {
                             if ((heightChanged || resizeConfirmedNow) && editorFrameLoaded &&
                                 editorResizeConfirmed && scheduleEditorSettle) {
@@ -6334,9 +6516,7 @@
                 const detachEditorForReload = (iframe, replyReload = false,
                                                 preserveAvatarLayer = replyReload) => {
                     if (!iframe) return;
-                    // Freeze the last settled size before removing src. The transient
-                    // about:blank document otherwise restores Blogger's 250px default,
-                    // which the height observer can mistake for a real editor resize.
+                    // Preserve settled size while src is removed.
                     captureEditorUrl(iframe);
                     prepareEditorReload(iframe, replyReload, preserveAvatarLayer);
                     customFormContainer.classList.add("is-relocating");
@@ -6369,9 +6549,7 @@
                 };
                 scheduleEditorSettle = iframe => {
                     const version = ++editorSettleVersion;
-                    // The protocol's resized marker is authoritative. Two paint frames
-                    // merely batch height/marker mutations from the same resize message;
-                    // no arbitrary network-delay heuristic decides the final size.
+                    // Treat data-resized as authoritative for the final height.
                     requestAnimationFrame(() => requestAnimationFrame(() => {
                         if (version === editorSettleVersion) finishEditorLoad(iframe);
                     }));
@@ -6401,9 +6579,7 @@
                 };
                 const placeEditorInForm = (iframe, formInner) => {
                     if (!iframe || !formInner) return;
-                    // Keep the restoration window immediately after the iframe. Appending
-                    // the iframe on every reply used to reverse these nodes and caused a
-                    // one-frame avatar flash plus an unnecessary layout invalidation.
+                    // Keep the restoration window after the iframe to preserve DOM order.
                     if (avatarWindow && avatarWindow.parentNode === formInner) {
                         formInner.insertBefore(iframe, avatarWindow);
                     } else if (!formInner.contains(iframe)) {
@@ -6426,8 +6602,7 @@
                     const mobileSrc = editorUrlParts[0] +
                                       (activeEditorParentId ? "&parentID=" + activeEditorParentId : "") +
                                       (editorUrlParts[1] ? "#" + editorUrlParts[1] : "");
-                    // The template selects the mobile renderer and locale before Blogger's
-                    // first request; this only repairs stale or legacy markup when needed.
+                    // Repair stale markup when the template locale or renderer was not applied.
                     if (iframe.src !== mobileSrc) {
                         prepareEditorReload(iframe);
                         iframe.src = mobileSrc;
@@ -6450,7 +6625,6 @@
                         iframe.src = src;
                     }
                     activeEditorParentId = nextParentId;
-                    editorLocale = nextLocale;
                     syncAvatarWindow(iframe);
                 };
                 const syncEditorLocale = () => {
@@ -6496,17 +6670,13 @@
                         formInner.appendChild(editorLoadingMask);
                     }
                     syncEditorLoadingText();
-                    // Establish the loading state before observing attributes. Otherwise
-                    // the observer's first read can promote Blogger's 250px bootstrap
-                    // height to the stable outer size before the real editor is ready.
+                    // Enter loading before observing attributes to reject bootstrap height.
                     editorReloadPending = true;
                     observeEditorHeight(editorIframe);
                     // Remember the tokenized URL before any DOM move can disturb it.
                     captureEditorUrl(editorIframe);
                     placeEditorInForm(editorIframe, formInner);
-                    // Blogger normally has the src set by now; if its script lost the race
-                    // (async load), fall back to the anchor's href - BLOG_CMT_createIframe
-                    // rewrites that same href in place, so it carries the token too.
+                    // Fall back to Blogger's rewritten anchor URL when src is still unset.
                     if (!editorIframe.getAttribute("src")) {
                         const holder = document.getElementById("comment-editor-src");
                         if (holder && holder.href) editorIframe.src = holder.href;
@@ -6612,9 +6782,7 @@
                                 if (!alreadyAtTop) customFormContainer.classList.add("is-returning-main");
                                 if (mainComments && !alreadyAtTop) {
                                     if (editorIframe) {
-                                        // Preserve the already-composited correction window.
-                                        // Recreating its backdrop-filter after reveal leaves
-                                        // the inverted avatar exposed for one compositor frame.
+                                        // Reuse the correction window to avoid exposing the inverted avatar.
                                         detachEditorForReload(editorIframe, false, true);
                                     }
                                     commentsWrapper.insertBefore(customFormContainer, mainComments);
@@ -6630,9 +6798,7 @@
                                     afterFormOpened(actionToken, finishMainToggle);
                                 };
                                 if (alreadyAtTop) {
-                                    // Keep the last visible, confirmed geometry. Adopting the
-                                    // hidden iframe's temporary 66px value here caused a
-                                    // 195px -> 66px -> 195px jump on every reopen.
+                                    // Keep the last confirmed visible geometry while hidden.
                                     if (editorIframe) applyEditorHeight(editorIframe, settledEditorHeight, true);
                                     expandMainForm();
                                 } else {
@@ -6663,9 +6829,10 @@
                     // Blogger also binds these data-comment-id links. Stop its target
                     // handler so only this theme's shared main editor handles the reply.
                     e.stopPropagation();
+                    const parentComment = replyBtn.closest(".comment");
+                    if (!parentComment) return;
 
-                    // Cancelling a reply is exactly the existing "write a comment" return
-                    // path: collapse, restore the compact top geometry, relocate, then open.
+                    // Reuse the write-comment path when cancelling a reply.
                     if (replyBtn.classList.contains("cancel-active") && commentToggleBtn) {
                         commentToggleBtn.click();
                         return;
@@ -6682,7 +6849,6 @@
                     const moveTarget = itemControl && itemControl.nextSibling;
                     const canPreserveFrame = moveParent && typeof moveParent.moveBefore === "function";
                     const wasExpanded = customFormContainer.classList.contains("is-expanded");
-                    const parentComment = replyBtn.closest(".comment");
                     const parentId = parentComment && parentComment.id ?
                         parentComment.id.replace(/^c/, "") : null;
                     let replyNavigationStarted = false;
@@ -6791,7 +6957,13 @@
             };
             const localizeCommentDates = scope => {
                 scope.querySelectorAll(".datetime:not([data-localized-date])").forEach(dateEl => {
-                    const target = dateEl.querySelector("a") || dateEl;
+                    const link = dateEl.querySelector("a");
+                    const target = link || dateEl;
+                    if (link) {
+                        link.removeAttribute("href");
+                        link.removeAttribute("target");
+                        link.removeAttribute("tabindex");
+                    }
                     const raw = target.textContent.trim();
                     const parsed = parseCommentDate(dateEl, target);
                     if (!raw || !parsed || isNaN(parsed.date.getTime())) return;
@@ -6860,12 +7032,17 @@
                     }
                 });
 
-                // Keep one reply button per comment.
+                // Keep one reply button per top-level comment.
                 commentScope.querySelectorAll(".comment:not([data-cleaned])").forEach(comment => {
                     const controls = Array.from(comment.querySelectorAll(".item-control"))
                         .find(control => control.closest(".comment") === comment);
                     const replyBtns = Array.from(comment.querySelectorAll(".comment-reply"))
                         .filter(button => button.closest(".comment") === comment);
+                    if (comment.closest(".comment-replies")) {
+                        replyBtns.forEach(button => button.remove());
+                        comment.dataset.cleaned = "true";
+                        return;
+                    }
                     if (controls && replyBtns.length) {
                         controls.appendChild(replyBtns[0]);
                         replyBtns[0].style.display = "inline-flex";
@@ -6931,19 +7108,21 @@
                         wrapper.setAttribute("aria-hidden", expanded ? "false" : "true");
                         if (expanded) wrapper.removeAttribute("inert");
                         else wrapper.setAttribute("inert", "");
-                        wrapper.querySelectorAll('a, button, input, textarea, select, [tabindex]').forEach(el => {
-                            if (!expanded) {
-                                if (!el.hasAttribute("data-rinuan-tabindex")) {
-                                    el.setAttribute("data-rinuan-tabindex", el.getAttribute("tabindex") || "");
+                        if (!("inert" in wrapper)) {
+                            wrapper.querySelectorAll('a, button, input, textarea, select, [tabindex]').forEach(el => {
+                                if (!expanded) {
+                                    if (!el.hasAttribute("data-rinuan-tabindex")) {
+                                        el.setAttribute("data-rinuan-tabindex", el.getAttribute("tabindex") || "");
+                                    }
+                                    el.setAttribute("tabindex", "-1");
+                                } else if (el.hasAttribute("data-rinuan-tabindex")) {
+                                    const previous = el.getAttribute("data-rinuan-tabindex");
+                                    if (previous) el.setAttribute("tabindex", previous);
+                                    else el.removeAttribute("tabindex");
+                                    el.removeAttribute("data-rinuan-tabindex");
                                 }
-                                el.setAttribute("tabindex", "-1");
-                            } else if (el.hasAttribute("data-rinuan-tabindex")) {
-                                const previous = el.getAttribute("data-rinuan-tabindex");
-                                if (previous) el.setAttribute("tabindex", previous);
-                                else el.removeAttribute("tabindex");
-                                el.removeAttribute("data-rinuan-tabindex");
-                            }
-                        });
+                            });
+                        }
                         toggleBtn.classList.toggle("expanded", expanded);
                         toggleBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
                         toggleBtn.innerHTML = buildLabel(expanded);
@@ -6981,8 +7160,19 @@
             }
 
             // Coalesce Blogger mutation bursts into one paint-frame pass.
-            const commentObserver = new MutationObserver(() => {
+            const commentObserver = new MutationObserver(mutations => {
                 if (restructuringComments || restructureFrame) return;
+                // Ignore shared editor moves and theme-owned label swaps.
+                const themeUiOnly = mutations.every(mutation => {
+                    if (mutation.target.nodeType === 1 &&
+                        mutation.target.matches(".comment-reply, .reply-toggle-btn")) return true;
+                    const changedNodes = Array.from(mutation.addedNodes)
+                        .concat(Array.from(mutation.removedNodes));
+                    return changedNodes.some(node => node.nodeType === 1) &&
+                        changedNodes.every(node => node.nodeType !== 1 ||
+                            node.id === "custom-comment-form-container");
+                });
+                if (themeUiOnly) return;
                 restructureFrame = requestAnimationFrame(() => {
                     restructureFrame = 0;
                     restructureComments();
@@ -7002,9 +7192,7 @@
 
             // The script sits below the comments markup - safe to start immediately.
             startObserving();
-            // Start as soon as the parsed comment markup is available. The initializer's
-            // observer still covers a late Blogger iframe without waiting on unrelated
-            // fonts, images or third-party resources.
+            // Initialize from parsed markup; the observer still catches a late iframe.
             if (document.readyState === "loading") {
                 document.addEventListener("DOMContentLoaded", initFormLifecycle, { once: true });
             } else {
