@@ -3010,7 +3010,7 @@
       @media (max-width: 600px) {
         .mascot { width: 96px; left: 8px; max-width: min(140px, 40vw) !important; }
         .mascot-bubble { max-width: min(150px, calc(100vw - 24px)); font-size: 0.8rem; }
-        .mascot-img { transition: none; }
+        .mascot-img { transition: filter 0.3s var(--ease); }
         .reading-hint:not(.is-shown),
         .mascot-menu:not(.is-open),
         .mascot-reopen:not(.is-visible) {
@@ -3397,6 +3397,36 @@
         </button>
       </div>
 
+      <b:if cond='not data:view.isError'>
+        <script type='text/javascript'>
+          //<![CDATA[
+          // Render the settings control before first paint.
+          (function() {
+              var topActions = document.querySelector('.top-actions');
+              if (!topActions) return;
+              var gear = document.createElement('button');
+              gear.className = 'action-btn';
+              gear.id = 'mascot-settings';
+              gear.type = 'button';
+              gear.setAttribute('aria-haspopup', 'dialog');
+              gear.setAttribute('aria-controls', 'mascot-menu');
+              gear.setAttribute('aria-expanded', 'false');
+              gear.setAttribute('aria-label', '看板娘设置 / Mascot settings');
+              gear.setAttribute('title', '看板娘设置 / Mascot settings');
+              gear.innerHTML =
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+                  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                    '<circle cx="12" cy="12" r="6"/>' +
+                    '<circle cx="12" cy="12" r="2.4"/>' +
+                    '<path d="M12 3.5V6M12 20.5V18M3.5 12H6M20.5 12H18M6 6l1.8 1.8M18 6l-1.8 1.8M6 18l1.8-1.8M18 18l-1.8-1.8"/>' +
+                  '</svg>';
+              try { if (localStorage.getItem('mascotHidden') === '1') gear.classList.add('is-collapsed'); } catch (e) {}
+              topActions.insertBefore(gear, topActions.firstChild);
+          })();
+          //]]>
+        </script>
+      </b:if>
+
       <header class='site-header'>
         <b:section class='header' id='header' maxwidgets='1' showaddelement='no'>
           <b:widget id='Header1' locked='true' title='檐角日暖，煮沸一壶人间清欢 (Header)' type='Header' version='2' visible='true'>
@@ -3557,7 +3587,9 @@
             }
             // Re-check once the web fonts settle, since a swap can nudge the tabs
             // across the overflow threshold.
-            if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleCheck);
+            if (document.fonts && document.fonts.addEventListener) {
+                document.fonts.addEventListener('loadingdone', scheduleCheck);
+            }
         })();
         //]]>
       </script>
@@ -4188,6 +4220,9 @@
             if (document.getElementById('error-404')) return;
 
             var startMascot = function(bootFromInteraction) {
+            var gear = document.getElementById('mascot-settings');
+            if (!gear) return;
+            var topActions = gear.parentNode;
             var ART = {
                 happy: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/happy.webp',
                 angry: 'https://cdn.jsdelivr.net/gh/rinuuan/blog-assets@main/mascot/chibi/angry.webp',
@@ -4225,27 +4260,7 @@
             document.body.appendChild(wrap);
 
             // Keep the settings popover reachable while the mascot is tucked or hidden.
-            var topActions = document.querySelector('.top-actions');
-            var gear = document.createElement('button');
-            gear.className = 'action-btn';
-            gear.id = 'mascot-settings';
-            gear.type = 'button';
-            gear.setAttribute('aria-haspopup', 'dialog');
-            gear.setAttribute('aria-controls', 'mascot-menu');
-            gear.setAttribute('aria-expanded', 'false');
-            gear.setAttribute('aria-label', '看板娘设置 / Mascot settings');
-            gear.setAttribute('title', '看板娘设置 / Mascot settings');
-            gear.innerHTML =
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-                'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-                  '<circle cx="12" cy="12" r="6"/>' +
-                  '<circle cx="12" cy="12" r="2.4"/>' +
-                  '<path d="M12 3.5V6M12 20.5V18M3.5 12H6M20.5 12H18M6 6l1.8 1.8M18 6l-1.8 1.8M6 18l1.8-1.8M18 18l-1.8-1.8"/>' +
-                '</svg>';
-            // Start collapsed if the mascot was dismissed last visit - no entrance animation on load.
-            try { if (localStorage.getItem(HIDE_KEY) === '1') gear.classList.add('is-collapsed'); } catch (e) {}
-            if (topActions) topActions.insertBefore(gear, topActions.firstChild);
-            else document.body.appendChild(gear);
+            try { gear.classList.toggle('is-collapsed', localStorage.getItem(HIDE_KEY) === '1'); } catch (e) {}
 
             var menu = document.createElement('div');
             menu.className = 'mascot-menu';
@@ -5445,13 +5460,18 @@
             }
             };
 
-            // Coarse pointers initialise only during idle, never inside the first tap.
+            // Coarse pointers stay idle-deferred unless the settings control is used.
             var booted = false;
             var bootEvents = window.matchMedia('(hover: hover) and (pointer: fine)').matches
                 ? ['pointermove', 'keydown', 'scroll']
-                : [];
+                : ['keydown'];
+            var settingsTrigger = document.getElementById('mascot-settings');
             var removeBootEvents = function() {
                 bootEvents.forEach(function(ev) { window.removeEventListener(ev, bootNow); });
+                if (settingsTrigger) {
+                    settingsTrigger.removeEventListener('pointerdown', bootNow);
+                    settingsTrigger.removeEventListener('click', bootSettingsClick);
+                }
             };
             var bootMascot = function(fromInteraction) {
                 if (booted) return;
@@ -5460,9 +5480,17 @@
                 startMascot(!!fromInteraction);
             };
             var bootNow = function() { bootMascot(true); };
+            var bootSettingsClick = function() {
+                bootMascot(true);
+                queueMicrotask(function() { settingsTrigger.click(); });
+            };
             bootEvents.forEach(function(ev) {
                 window.addEventListener(ev, bootNow, { once: true, passive: true });
             });
+            if (settingsTrigger) {
+                settingsTrigger.addEventListener('pointerdown', bootNow, { once: true, passive: true });
+                settingsTrigger.addEventListener('click', bootSettingsClick, { once: true });
+            }
             if ('requestIdleCallback' in window) {
                 requestIdleCallback(function() { bootMascot(false); }, { timeout: 1800 });
             } else {
@@ -5534,8 +5562,6 @@
 
     </div>
 
-    <script type='text/javascript'>if (window.__rinuanTypesetTitles) window.__rinuanTypesetTitles(document);</script>
-
     <script type='text/javascript'>
       //<![CDATA[
       // Bind controls before images finish loading.
@@ -5599,7 +5625,6 @@
                 m.setAttribute("content", dark ? "#1a1915" : "#faf9f4");
             });
         };
-        syncThemeUI();
         let desiredTheme = root.getAttribute("data-theme") === "dark" ? "dark" : "light";
         let themeIntentVersion = 0;
         const applyTheme = theme => {
