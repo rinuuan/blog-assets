@@ -274,7 +274,7 @@
         /* Stop iOS Safari auto-inflating text on rotation (pinch-zoom is unaffected). */
         -webkit-text-size-adjust: 100%;
         text-size-adjust: 100%;
-        /* No synthetic italics: CJK has no italic face and fake slant is ugly. */
+        /* Keep CJK upright by disabling synthetic italics. */
         font-synthesis: weight small-caps;
 
         transition: background-color 0.3s var(--ease), color var(--theme-color-duration) var(--theme-ease);
@@ -1289,7 +1289,7 @@
       }
 
       /* Comfortable paragraph rhythm. */
-      /* text-wrap: pretty evens out line lengths and kills orphans/rivers the way fine typesetting does. */
+        /* Balance paragraph lines and reduce orphan words. */
       .post-body.full-content p { margin: 0 0 1.4em; text-wrap: pretty; }
 
       /* Set English metrics server-side for a stable first paint. */
@@ -1830,6 +1830,33 @@
           top: 69px;
           transform: none;
         }
+      }
+      /* English notice wrapping moves the avatar with the editor's own width. */
+      [data-lang="en"] .form-inner { container: comment-editor / inline-size; }
+      [data-lang="en"] .comment-avatar-window-lower[data-avatar-layout="lower"]:not([hidden]) {
+        top: var(--english-avatar-top, 157px);
+      }
+      @media (max-width: 491px) {
+        /* Align the composited edge on narrow-screen Android Chrome. */
+        [data-lang="en"] .comment-avatar-window-lower[data-avatar-layout="lower"]:not([hidden]) {
+          transform: translateY(-0.75px);
+        }
+      }
+      /* ponytail: measured Blogger notice wrapping; recalibrate if its text or font changes. */
+      @container comment-editor (min-width: 261px) {
+        .comment-avatar-window-lower { --english-avatar-top: 138px; }
+      }
+      @container comment-editor (min-width: 290px) {
+        .comment-avatar-window-lower { --english-avatar-top: 119px; }
+      }
+      @container comment-editor (min-width: 359px) {
+        .comment-avatar-window-lower { --english-avatar-top: 100px; }
+      }
+      @container comment-editor (min-width: 486px) {
+        .comment-avatar-window-lower { --english-avatar-top: 81px; }
+      }
+      @container comment-editor (min-width: 698px) {
+        .comment-avatar-window-lower { --english-avatar-top: 62px; }
       }
       .comment-avatar-window[hidden] { display: none; }
 
@@ -2400,7 +2427,7 @@
         .reply-toggle-btn::before { left: -14px !important; width: 14px !important; height: 26px !important; top: -10px !important; border-bottom-left-radius: 12px !important; }
       }
 
-      /* Desktop marginalia (>=1024px) - additive flourishes only; the reading column is untouched. */
+      /* Desktop margin rails leave the reading column unchanged. */
       @media (min-width: 1024px) {
 
         /* Margin rails: date (left) + read time (right), a centered pair. */
@@ -2610,7 +2637,7 @@
         opacity: 0;
         transform: translateY(16px);
         transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
-        /* Container box equals the figure; bubble/gear/menu are absolute. */
+        /* Size the container to the figure; position the bubble separately. */
       }
       .mascot.is-ready { opacity: 1; transform: translateY(0); }
       .mascot.is-hidden {
@@ -3208,13 +3235,13 @@
         var visualLines = function(title) {
           var lines = [];
           var walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT);
+          var range = document.createRange();
           var node;
           while ((node = walker.nextNode())) {
             for (var offset = 0, value = node.nodeValue || ''; offset < value.length;) {
               var end = offset + (value.codePointAt(offset) > 0xffff ? 2 : 1);
               var text = value.slice(offset, end);
               if (/\s/.test(text)) { offset = end; continue; }
-              var range = document.createRange();
               range.setStart(node, offset); range.setEnd(node, end);
               var rect = range.getBoundingClientRect();
               if (!rect.width && !rect.height) { offset = end; continue; }
@@ -3250,7 +3277,8 @@
         var typesetTitle = function(title) {
           title.querySelectorAll('br[' + BREAK_ATTR + ']').forEach(function(br) { br.remove(); });
           title.normalize();
-          if (!title.getClientRects().length || title.querySelector('br')) return;
+          // No punctuation means there is no preferred break to measure.
+          if (!BREAK_PUNCT.test(title.textContent) || !title.getClientRects().length || title.querySelector('br')) return;
 
           for (var pass = 0; pass < 12; pass++) {
             var lines = visualLines(title);
@@ -3551,7 +3579,7 @@
 
             // Redirect vertical wheel to horizontal scroll (bound in scroll mode only).
             var onWheel = function(e) {
-                if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+                if (e.ctrlKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
                 var dir = e.deltaY > 0 ? 1 : -1;
                 var atEnd = (dir > 0 && nav.scrollLeft >= nav.scrollWidth - nav.clientWidth - 1) ||
                             (dir < 0 && nav.scrollLeft <= 0);
@@ -4323,7 +4351,7 @@
             var lang = function() {
                 return document.documentElement.getAttribute('data-lang') === 'en' ? 'en' : 'zh';
             };
-            // Lines are stored simplified; Traditional mode converts them with the OpenCC the theme already loads.
+            // Convert simplified dialogue with the shared OpenCC library.
             var s2tConverter = null;
             var toVariant = function(text) {
                 if (document.documentElement.getAttribute('data-variant') === 'trad' && window.OpenCC) {
@@ -4347,7 +4375,7 @@
                     loaded[name] = true;
                     if (token === artToken) imgEl.src = url;
                 };
-                // A missing peek image falls back to the last expression - it must never tear down the whole mascot.
+                // Fall back to the last expression if peek art fails.
                 if (isPeek) {
                     pre.onerror = function() {
                         if (token === artToken) setArt(currentMood, false);
@@ -4843,7 +4871,14 @@
                 };
             };
             var baseW = function() { return window.innerWidth <= 600 ? 96 : 172; };
-            var applySize = function() { wrap.style.width = Math.round(baseW() * mascotScale) + 'px'; };
+            var applySize = function() {
+                wrap.style.width = Math.round(baseW() * mascotScale) + 'px';
+                // Keep a positioned mascot in view after size or viewport changes.
+                if (wrap.style.left) {
+                    var c = clampPos(parseFloat(wrap.style.left), parseFloat(wrap.style.top));
+                    applyPos(c.left, c.top);
+                }
+            };
             applySize();
             var savePos = function(l, t) {
                 try { localStorage.setItem(POS_KEY, JSON.stringify({ left: l, top: t })); } catch (e) {}
@@ -5037,7 +5072,6 @@
                 mascotResizeRAF = requestAnimationFrame(function() {
                     mascotResizeRAF = 0;
                     applySize();
-                    if (wrap.style.left) { var c = clampPos(parseInt(wrap.style.left, 10), parseInt(wrap.style.top, 10)); applyPos(c.left, c.top); }
                     if (reopen.classList.contains('is-visible')) {
                         var rr = reopen.getBoundingClientRect();
                         placeReopen(reopen.classList.contains('side-right') ? 'right' : 'left', rr.top + rr.height / 2);
@@ -5323,22 +5357,24 @@
             var sizeSlider = menu.querySelector('.mascot-size');
             sizeSlider.value = mascotScale;
             var committedScale = mascotScale;
-            var sizeRaf = false;
+            var sizeRaf = 0;
             sizeSlider.addEventListener('input', function() {
                 wrap.classList.add('mascot-resizing');
                 if (sizeRaf) return;
-                sizeRaf = true;
-                requestAnimationFrame(function() {
-                    sizeRaf = false;
+                sizeRaf = requestAnimationFrame(function() {
+                    sizeRaf = 0;
                     imgEl.style.transform = 'scale(' + (parseFloat(sizeSlider.value) / committedScale).toFixed(3) + ')';
                 });
             });
             var commitSize = function() {
+                if (sizeRaf) cancelAnimationFrame(sizeRaf);
+                sizeRaf = 0;
                 mascotScale = parseFloat(sizeSlider.value);
                 committedScale = mascotScale;
                 imgEl.style.transform = '';
                 wrap.classList.remove('mascot-resizing');
                 applySize();
+                if (wrap.style.left) savePos(parseFloat(wrap.style.left), parseFloat(wrap.style.top));
                 try { localStorage.setItem(SIZE_KEY, mascotScale); } catch (e) {}
             };
             sizeSlider.addEventListener('change', commitSize);
@@ -6021,7 +6057,7 @@
 
         adjustPostTypography(document);
 
-        // List-card dates - fill each server-rendered <time class='card-date'> with bilingual display spans.
+        // Fill card dates with bilingual display spans.
         const CARD_EN_MONTHS = window.__rinuanMonths;
         function formatCardDates(root) {
             const notCategory = new Set(['中文', 'english', 'en', 'zh']);
@@ -6606,7 +6642,8 @@
                     if (!iframe || !formInner) return;
                     // Keep the restoration window after the iframe to preserve DOM order.
                     if (avatarWindow && avatarWindow.parentNode === formInner) {
-                        formInner.insertBefore(iframe, avatarWindow);
+                        // Reinserting even at the same position reloads the editor and loses its draft.
+                        if (iframe.nextSibling !== avatarWindow) formInner.insertBefore(iframe, avatarWindow);
                     } else if (!formInner.contains(iframe)) {
                         formInner.appendChild(iframe);
                     }
