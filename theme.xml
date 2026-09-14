@@ -1531,29 +1531,37 @@
       }
 
       #custom-comment-form-container {
-        display: grid;
-        grid-template-rows: 0fr;
+        display: block;
+        height: 0;
+        overflow: clip;
         margin-top: 0;
         margin-bottom: 0;
         width: 100%;
         position: relative;
         pointer-events: none;
-        transition: grid-template-rows 0.28s var(--ease), margin 0.28s var(--ease);
+        transition: height 0.28s var(--ease), margin 0.28s var(--ease);
       }
 
       #custom-comment-form-container.is-expanded {
-        grid-template-rows: 1fr;
+        height: calc(var(--comment-editor-height, 66px) + 2px);
         pointer-events: auto;
         margin-top: 15px;
         margin-bottom: 15px;
         /* Decelerating open; transitionend drives relocation after the close. */
-        transition: grid-template-rows 0.32s var(--ease), margin 0.32s var(--ease);
+        transition: height 0.32s var(--ease-out), margin 0.32s var(--ease-out);
       }
       #custom-comment-form-container.is-returning-main {
-        transition: grid-template-rows 0.22s var(--ease), margin 0.22s var(--ease);
+        transition: height 0.22s var(--ease), margin 0.22s var(--ease);
       }
       #custom-comment-form-container.is-returning-main.is-expanded {
-        transition: grid-template-rows 0.28s var(--ease), margin 0.28s var(--ease);
+        transition: height 0.28s var(--ease), margin 0.28s var(--ease);
+      }
+      /* Keep reply relocation brisk without changing its confirmed-height gate. */
+      #custom-comment-form-container.is-reply-transition {
+        transition-duration: 0.14s;
+      }
+      #custom-comment-form-container.is-reply-transition.is-expanded {
+        transition-duration: 0.20s;
       }
       /* Directly under the main toggle button: tuck 5px closer. */
       .comments-wrapper > #custom-comment-form-container.is-expanded {
@@ -1583,7 +1591,10 @@
         transition: var(--comment-theme-transition);
       }
       /* Keep the single editor surface precomposed across viewports. */
-      #custom-comment-form-container .form-inner { will-change: transform; }
+      #custom-comment-form-container .form-inner {
+        height: calc(var(--comment-editor-height, 66px) + 2px);
+        will-change: transform;
+      }
       /* Precompose mobile reply fades without retaining every desktop thread. */
       @media (max-width: 600px) {
         .replies-grid-wrapper { will-change: opacity; }
@@ -1737,9 +1748,8 @@
         opacity: 1;
         border-radius: 13px;
         height: var(--comment-editor-height, 66px) !important;
-        transition:
-          height 0.24s var(--ease-out),
-          opacity 0.22s var(--ease-out);
+        /* Resize the iframe atomically; animate only the outer container. */
+        transition: opacity 0.22s var(--ease-out);
       }
       /* Apply hidden height updates before the outer form starts moving. */
       #custom-comment-form-container:not(.is-expanded) iframe#comment-editor {
@@ -1761,10 +1771,6 @@
         filter: invert(1) hue-rotate(180deg) brightness(1);
         mix-blend-mode: screen;
       }
-      /* Commit cross-origin editor geometry atomically on every viewport. */
-      .comments-wrapper iframe#comment-editor {
-        transition: opacity 0.22s var(--ease-out);
-      }
 
       /* Reveal Blogger's active signed-in or anonymous avatar through the iframe. */
       .comment-avatar-window {
@@ -1783,10 +1789,6 @@
         filter: url("#comment-avatar-presence");
         mix-blend-mode: normal;
         transition: none;
-      }
-      /* Never sample the clipped iframe while the form is opening. */
-      #custom-comment-form-container[data-editor-state="opening"] .comment-avatar-window:not([hidden]) {
-        opacity: 0;
       }
       #custom-comment-form-container.is-relocating .comment-avatar-window:not([hidden]) {
         opacity: 0;
@@ -6245,6 +6247,7 @@
                 let setFormExpanded = null;
                 let mainToggleBusy = false;
                 let queuedMainToggle = false;
+                let replyHeightPending = false;
                 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 let commentThemeSnapshotWarmed = false;
                 // Warm the first mobile iframe snapshot after the editor is ready.
@@ -6267,6 +6270,7 @@
                 };
                 const beginFormAction = () => {
                     formActionToken++;
+                    replyHeightPending = false;
                     editorSettleVersion++;
                     if (editorReloadPending) editorLoadToken = formActionToken;
                     replyReloadPending = false;
@@ -6274,6 +6278,7 @@
                     customFormContainer.classList.remove("is-loading-mask");
                     customFormContainer.classList.remove("is-relocating");
                     customFormContainer.classList.remove("is-returning-main");
+                    customFormContainer.classList.remove("is-reply-transition");
                     customFormContainer.style.transition = '';
                     const currentIframe = document.getElementById("comment-editor");
                     if (currentIframe) {
@@ -6400,7 +6405,7 @@
                 };
                 customFormContainer.dataset.editorState = editorState;
                 customFormContainer.addEventListener("transitionend", event => {
-                    if (event.target !== customFormContainer || event.propertyName !== "grid-template-rows") return;
+                    if (event.target !== customFormContainer || event.propertyName !== "height") return;
                     if (customFormContainer.classList.contains("is-expanded")) {
                         customFormContainer.classList.remove("is-returning-main");
                         if (editorState === "opening") setEditorState("ready", document.getElementById("comment-editor"));
@@ -6432,7 +6437,7 @@
                         if (token === formActionToken) callback();
                     };
                     const onEnd = event => {
-                        if (event.target !== customFormContainer || event.propertyName !== "grid-template-rows") return;
+                        if (event.target !== customFormContainer || event.propertyName !== "height") return;
                         finish();
                     };
                     customFormContainer.addEventListener("transitionend", onEnd);
@@ -6440,8 +6445,8 @@
                         probeFrame = requestAnimationFrame(() => {
                             probeFrame = 0;
                             if (token !== formActionToken || customFormContainer.classList.contains("is-expanded")) return;
-                            const collapsedRow = parseFloat(getComputedStyle(customFormContainer).gridTemplateRows);
-                            if (Number.isFinite(collapsedRow) && collapsedRow <= 2.5) finish();
+                            const collapsedHeight = parseFloat(getComputedStyle(customFormContainer).height);
+                            if (Number.isFinite(collapsedHeight) && collapsedHeight <= 2.5) finish();
                         });
                     });
                     cancelPendingRelocation = () => {
@@ -6473,7 +6478,7 @@
                     };
                     const onEnd = event => {
                         if (event.target !== customFormContainer ||
-                            event.propertyName !== "grid-template-rows" ||
+                            event.propertyName !== "height" ||
                             !customFormContainer.classList.contains("is-expanded")) return;
                         finish();
                     };
@@ -6498,10 +6503,7 @@
                     if (parsed === BOOTSTRAP_EDITOR_HEIGHT &&
                         settledEditorHeight !== BOOTSTRAP_EDITOR_HEIGHT) return;
                     settledEditorHeight = parsed;
-                    const formInner = customFormContainer.querySelector('.form-inner');
-                    if (formInner) {
-                        formInner.style.setProperty('--comment-editor-height', parsed + 'px');
-                    }
+                    customFormContainer.style.setProperty('--comment-editor-height', parsed + 'px');
                     if (avatarWindow) {
                         avatarWindow.dataset.avatarLayout =
                             parsed >= LOWER_AVATAR_EDITOR_HEIGHT ? 'lower' : 'upper';
@@ -6515,9 +6517,10 @@
                 };
                 function normalizeClosedEditorHeight(iframe) {
                     if (!iframe || customFormContainer.classList.contains("is-expanded")) return;
-                    // Restore the compact baseline only after closing.
-                    applyEditorHeight(iframe, MIN_EDITOR_HEIGHT, true);
-                    iframe.setAttribute("height", MIN_EDITOR_HEIGHT + "px");
+                    // Reload to restore Blogger's native compact input, clearing the draft.
+                    if (editorReloadPending || replyReloadPending || settledEditorHeight <= MIN_EDITOR_HEIGHT) return;
+                    prepareEditorReload(iframe);
+                    iframe.src = iframe.src;
                 }
                 function observeEditorHeight(iframe, adoptCurrent = true) {
                     if (editorHeightObserver) editorHeightObserver.disconnect();
@@ -6563,10 +6566,7 @@
                     editorResizeConfirmed = false;
                     if (!replyReload) {
                         settledEditorHeight = MIN_EDITOR_HEIGHT;
-                        const formInner = customFormContainer.querySelector('.form-inner');
-                        if (formInner) {
-                            formInner.style.setProperty('--comment-editor-height', MIN_EDITOR_HEIGHT + 'px');
-                        }
+                        customFormContainer.style.setProperty('--comment-editor-height', MIN_EDITOR_HEIGHT + 'px');
                         iframe.setAttribute("height", "66");
                     }
                     iframe.removeAttribute("data-resized");
@@ -6586,7 +6586,7 @@
                 };
                 finishEditorLoad = iframe => {
                     if (!editorReloadPending || !editorFrameLoaded ||
-                        (!editorResizeConfirmed && !replyReloadPending) ||
+                        (!editorResizeConfirmed && (!replyReloadPending || replyHeightPending)) ||
                         editorLoadToken !== formActionToken ||
                         editorState === "closing" || editorState === "closed") return;
                     const atomicReplyReveal = replyReloadPending;
@@ -6606,6 +6606,7 @@
                     syncAvatarWindow(iframe);
                     restoreEditorVisibility(iframe, editorLoadToken);
                     keepAvatarWindowMounted = false;
+                    replyHeightPending = false;
                     scheduleEditorReveal(iframe, editorLoadToken);
                 };
                 scheduleEditorSettle = iframe => {
@@ -6801,7 +6802,7 @@
                     commentToggleBtn.addEventListener("click", e => {
                         e.preventDefault();
                         if (mainToggleBusy) {
-                            // Preserve the user's final intent without reversing a grid
+                            // Preserve the user's final intent without reversing a height
                             // transition halfway through its computed height.
                             queuedMainToggle = !queuedMainToggle;
                             return;
@@ -6913,7 +6914,6 @@
                     const wasExpanded = customFormContainer.classList.contains("is-expanded");
                     const parentId = parentComment && parentComment.id ?
                         parentComment.id.replace(/^c/, "") : null;
-                    let replyNavigationStarted = false;
 
                     // Clear any other active reply buttons synchronously so rapid clicks
                     // cannot leave a stale delayed relocation behind.
@@ -6924,14 +6924,9 @@
                     commentsWrapper.classList.remove("show-main-form");
                     setMainFormState("replying");
 
-                    // Start Blogger's parentID navigation while the old location is
-                    // collapsing. moveBefore preserves that in-flight iframe request.
-                    if (iframe && canPreserveFrame) {
-                        prepareEditorReload(iframe, true);
-                        customFormContainer.classList.add("is-relocating");
-                        setEditorSrc(iframe, parentId);
-                        replyNavigationStarted = true;
-                    }
+                    // Keep the visible editor intact until it has closed.
+                    replyReloadPending = true;
+                    customFormContainer.classList.add("is-reply-transition");
 
                     const relocateAndExpand = () => {
                         if (actionToken !== formActionToken) return;
@@ -6939,10 +6934,10 @@
                         // at its destination so it owns the first expanded paint.
                         customFormContainer.classList.add("is-loading-mask");
                         if (iframe) {
-                            if (canPreserveFrame && !replyNavigationStarted) {
+                            if (canPreserveFrame) {
                                 prepareEditorReload(iframe, true);
                                 customFormContainer.classList.add("is-relocating");
-                            } else if (!canPreserveFrame) {
+                            } else {
                                 detachEditorForReload(iframe, true);
                             }
                         }
@@ -6952,19 +6947,18 @@
                             if (canPreserveFrame) moveParent.moveBefore(customFormContainer, moveTarget);
                             else itemControl.insertAdjacentElement('afterend', customFormContainer);
                             placeEditorInForm(iframe, formInner);
-                            if (!replyNavigationStarted) setEditorSrc(iframe, parentId);
+                            setEditorSrc(iframe, parentId);
                         }
 
-                        requestAnimationFrame(() => {
+                        // Show the compact loading shell; reveal only confirmed iframe geometry.
+                        replyHeightPending = true;
+                        customFormContainer.style.setProperty('--comment-editor-height', MIN_EDITOR_HEIGHT + 'px');
+                        requestAnimationFrame(() => requestAnimationFrame(() => {
                             if (actionToken !== formActionToken) return;
-                            // Match the main toggle: paint one collapsed frame at the new
-                            // position before the grid expansion becomes visible.
-                            requestAnimationFrame(() => {
-                                if (actionToken !== formActionToken) return;
-                                customFormContainer.style.transition = '';
-                                setFormExpanded(true);
-                            });
-                        });
+                            customFormContainer.style.transition = '';
+                            setFormExpanded(true);
+                        }));
+                        if (iframe) observeEditorHeight(iframe, false);
                     };
 
                     if (wasExpanded) {
