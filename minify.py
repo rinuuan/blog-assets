@@ -368,6 +368,10 @@ THEME_REGRESSION_CHECKS = (
         "avatar correction must not pre-rasterize stale iframe pixels",
     ),
     (
+        re.compile(r'#custom-comment-form-container\[data-editor-state="opening"\]\s+\.comment-avatar-window[^}]*opacity:\s*0', re.I | re.S),
+        "opening the visible iframe must not hide its avatar correction",
+    ),
+    (
         re.compile(r"\.top-actions\s*\{[^}]*(?:-webkit-)?backdrop-filter", re.I | re.S),
         "top controls must not rebuild a backdrop-filter layer during theme changes",
     ),
@@ -458,12 +462,12 @@ THEME_REQUIRED_CHECKS = (
         "title typesetting must ignore mobile height-only resize events",
     ),
     (
-        re.compile(r"#custom-comment-form-container\.is-returning-main\s*\{[^}]*grid-template-rows\s+0\.22s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-returning-main\.is-expanded\s*\{[^}]*grid-template-rows\s+0\.28s\s+var\(--ease\)", re.I),
+        re.compile(r"#custom-comment-form-container\.is-returning-main\s*\{[^}]*height\s+0\.22s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-returning-main\.is-expanded\s*\{[^}]*height\s+0\.28s\s+var\(--ease\)", re.I),
         "reply-to-main comment motion must stay responsive",
     ),
     (
-        re.compile(r"#custom-comment-form-container\s*\{[^}]*transition:\s*grid-template-rows\s+0\.28s\s+var\(--ease\),\s*margin\s+0\.28s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-expanded\s*\{[^}]*transition:\s*grid-template-rows\s+0\.32s\s+var\(--ease\),\s*margin\s+0\.32s\s+var\(--ease\)", re.I),
-        "main comment motion must use the site's balanced easing",
+        re.compile(r"#custom-comment-form-container\s*\{[^}]*transition:\s*height\s+0\.28s\s+var\(--ease\),\s*margin\s+0\.28s\s+var\(--ease\)[\s\S]*?#custom-comment-form-container\.is-expanded\s*\{[^}]*transition:\s*height\s+0\.32s\s+var\(--ease-out\),\s*margin\s+0\.32s\s+var\(--ease-out\)", re.I),
+        "comment opening must respond immediately and decelerate into the settled height",
     ),
     (
         re.compile(r"if\s*\(wasExpanded\s*&&\s*!alreadyAtTop\)\s*\{\s*customFormContainer\.classList\.add\(\"is-returning-main\"\);\s*setFormExpanded\(false\)", re.I),
@@ -490,15 +494,15 @@ THEME_REQUIRED_CHECKS = (
         "main comment form must use the closed baseline before reopening",
     ),
     (
-        re.compile(r"function\s+normalizeClosedEditorHeight\(iframe\)\s*\{[\s\S]*?classList\.contains\(\"is-expanded\"\)\)\s*return;[\s\S]*?applyEditorHeight\(iframe,\s*MIN_EDITOR_HEIGHT,\s*true\);[\s\S]*?iframe\.setAttribute\(\"height\",\s*MIN_EDITOR_HEIGHT\s*\+\s*\"px\"\)", re.I),
-        "closed main editors must commit Blogger's compact reopen baseline",
+        re.compile(r"function\s+normalizeClosedEditorHeight\(iframe\)\s*\{[\s\S]*?classList\.contains\(\"is-expanded\"\)\)\s*return;[\s\S]*?if\s*\(editorReloadPending\s*\|\|\s*replyReloadPending\s*\|\|\s*settledEditorHeight\s*<=\s*MIN_EDITOR_HEIGHT\)\s*return;\s*prepareEditorReload\(iframe\);\s*iframe\.src\s*=\s*iframe\.src;", re.I),
+        "closed editors must reload native compact input without interrupting pending navigation",
     ),
     (
         re.compile(r"if\s*\(reduceMotion\(\)\)[\s\S]*?normalizeClosedEditorHeight\(iframe\);[\s\S]*?setEditorState\(\"closed\",\s*iframe\)[\s\S]*?transitionend[\s\S]*?else\s+if\s*\(editorState\s*===\s*\"closing\"\)[\s\S]*?normalizeClosedEditorHeight\(iframe\);[\s\S]*?setEditorState\(\"closed\",\s*iframe\)", re.I),
         "both reduced-motion and animated closes must normalize while hidden",
     ),
     (
-        re.compile(r"const\s+afterFormClosed\s*=\s*\(token,\s*callback\)\s*=>[\s\S]*?probeFrame\s*=\s*requestAnimationFrame\([\s\S]*?getComputedStyle\(customFormContainer\)\.gridTemplateRows[\s\S]*?collapsedRow\s*<=\s*2\.5[\s\S]*?finish\(\)", re.I),
+        re.compile(r"const\s+afterFormClosed\s*=\s*\(token,\s*callback\)\s*=>[\s\S]*?probeFrame\s*=\s*requestAnimationFrame\([\s\S]*?getComputedStyle\(customFormContainer\)\.height[\s\S]*?collapsedHeight\s*<=\s*2\.5[\s\S]*?finish\(\)", re.I),
         "comment relocation must recover when a collapsed form emits no transitionend",
     ),
     (
@@ -702,8 +706,8 @@ THEME_REQUIRED_CHECKS = (
         "visible comment editor theme changes must snapshot the form and fixed reading chrome with a safe fallback",
     ),
     (
-        re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?filter:\s*invert\(0\)\s+hue-rotate\(0deg\)\s+brightness\(1\)[\s\S]*?mix-blend-mode:\s*multiply[\s\S]*?transition:\s*height", re.I),
-        "light comment editor must keep its stable multiply identity and geometry motion",
+        re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[^}]*filter:\s*invert\(0\)\s+hue-rotate\(0deg\)\s+brightness\(1\)[^}]*mix-blend-mode:\s*multiply[^}]*transition:\s*opacity", re.I),
+        "light comment editor must keep its stable multiply identity and opacity transition",
     ),
     (
         re.compile(r"\.header-desc\s*\{[^}]*color:\s*inherit[^}]*opacity:\s*0\.62[^}]*transition:\s*none", re.I | re.S),
@@ -758,8 +762,12 @@ THEME_REQUIRED_CHECKS = (
         "avatar layout state must stay synchronized before and after iframe creation",
     ),
     (
-        re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[\s\S]*?transition:\s*height\s+0\.24s\s+var\(--ease-out\),\s*opacity\s+0\.22s\s+var\(--ease-out\);?", re.I),
+        re.compile(r"\.comments-wrapper\s+iframe#comment-editor\s*\{[^}]*transition:\s*opacity\s+0\.22s\s+var\(--ease-out\);?\s*\}", re.I),
         "comment iframe compositing must switch atomically without a discrete transition",
+    ),
+    (
+        re.compile(r"#custom-comment-form-container\s*\{[^}]*height:\s*0[^}]*overflow:\s*clip[\s\S]*?#custom-comment-form-container\.is-expanded\s*\{[^}]*height:\s*calc\(var\(--comment-editor-height,\s*66px\)\s*\+\s*2px\)[\s\S]*?#custom-comment-form-container\s+\.form-inner\s*\{[^}]*height:\s*calc\(var\(--comment-editor-height,\s*66px\)\s*\+\s*2px\)[\s\S]*?customFormContainer\.style\.setProperty\('--comment-editor-height',\s*parsed\s*\+\s*'px'\)", re.I | re.S),
+        "outer height animation must reveal a stable editor using one inherited height",
     ),
     (
         re.compile(r"const\s+prepareEditorReload\s*=\s*\(iframe,\s*replyReload\s*=\s*false,\s*preserveAvatarLayer\s*=\s*replyReload\)\s*=>[\s\S]*?replyReloadPending\s*=\s*replyReload[\s\S]*?keepAvatarWindowMounted\s*=\s*preserveAvatarLayer[\s\S]*?if\s*\(!replyReload\)[\s\S]*?settledEditorHeight\s*=\s*MIN_EDITOR_HEIGHT[\s\S]*?setProperty\('--comment-editor-height',\s*MIN_EDITOR_HEIGHT\s*\+\s*'px'\)[\s\S]*?iframe\.setAttribute\(\"height\",\s*\"66\"\)[\s\S]*?iframe\.removeAttribute\(\"data-resized\"\)", re.I),
@@ -850,8 +858,20 @@ THEME_REQUIRED_CHECKS = (
         "rapid main-toggle clicks must queue final intent until the current transition finishes",
     ),
     (
-        re.compile(r"const\s+parentId\s*=\s*parentComment[\s\S]*?let\s+replyNavigationStarted\s*=\s*false[\s\S]*?if\s*\(iframe\s*&&\s*canPreserveFrame\)\s*\{\s*prepareEditorReload\(iframe,\s*true\);[\s\S]*?setEditorSrc\(iframe,\s*parentId\);\s*replyNavigationStarted\s*=\s*true;[\s\S]*?const\s+relocateAndExpand", re.I),
-        "reply iframe navigation must overlap the close transition before relocation",
+        re.compile(r"replyReloadPending\s*=\s*true;\s*customFormContainer\.classList\.add\(\"is-reply-transition\"\);\s*const\s+relocateAndExpand\s*=\s*\(\)\s*=>\s*\{[\s\S]*?prepareEditorReload\(iframe,\s*true\)[\s\S]*?setEditorSrc\(iframe,\s*parentId\)", re.I),
+        "reply navigation must wait for the visible editor to close",
+    ),
+    (
+        re.compile(r"!editorResizeConfirmed\s*&&\s*\(!replyReloadPending\s*\|\|\s*replyHeightPending\)[\s\S]*?applyEditorHeight\(iframe,[\s\S]*?replyHeightPending\s*=\s*false;", re.I),
+        "reply reveal must wait for confirmed geometry before clearing its height gate",
+    ),
+    (
+        re.compile(r"replyHeightPending\s*=\s*true;\s*customFormContainer\.style\.setProperty\('--comment-editor-height',\s*MIN_EDITOR_HEIGHT\s*\+\s*'px'\);\s*requestAnimationFrame\(\(\)\s*=>\s*requestAnimationFrame\([\s\S]*?setFormExpanded\(true\)", re.I),
+        "reply loading must open a compact shell before the iframe is ready",
+    ),
+    (
+        re.compile(r"const\s+beginFormAction\s*=\s*\(\)\s*=>\s*\{\s*formActionToken\+\+;\s*replyHeightPending\s*=\s*false", re.I),
+        "new actions must reset the pending reply height gate",
     ),
     (
         re.compile(r"const\s+setMainFormState\s*=\s*expanded\s*=>[\s\S]*?commentToggleBtn\.setAttribute\(\"aria-expanded\",\s*expanded\s*\?\s*\"true\"\s*:\s*\"false\"\)", re.I),
